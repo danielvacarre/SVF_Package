@@ -1,12 +1,13 @@
 from pandas import read_csv
 
-from SVF import CrossValidation
+from SVF_Methods import CrossValidation, SVF
 
 if __name__ == '__main__':
     ruta_datos = "../data/datos.csv"
 
     inputs = ["x1", "x2"]
     outputs = ["y1", "y2"]
+    method = "SVF-SP"
 
     C = [1]
     eps = [0]
@@ -14,4 +15,6 @@ if __name__ == '__main__':
 
     data_simulation = read_csv(ruta_datos, sep=";")
 
-    cv = CrossValidation("SVF-SP", inputs, outputs, data_simulation, C, eps, d)
+    cross_validation = CrossValidation(method, inputs, outputs, data_simulation, C, eps, d,n_folds=2)
+
+    cross_validation.cv()
