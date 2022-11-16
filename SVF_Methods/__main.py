@@ -7,10 +7,10 @@ if __name__ == '__main__':
 
     inputs = ["x1", "x2"]
     outputs = ["y1", "y2"]
-    method = "SVF-SP"
+    method = "SSVF"
 
     C = [1]
-    eps = [0]
+    eps = [0,1]
     d = [2]
 
     data_simulation = read_csv(ruta_datos, sep=";")
@@ -18,3 +18,6 @@ if __name__ == '__main__':
     cross_validation = CrossValidation(method, inputs, outputs, data_simulation, C, eps, d,n_folds=2)
 
     cross_validation.cv()
+    #
+    # model = SVF(method, inputs, outputs, data_simulation, 1, 0, 2)
+    # model.train()

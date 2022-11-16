@@ -65,33 +65,47 @@ class CrossValidation(object):
             fold = FOLD(data_train, data_test, fold_num)
             list_fold.append(fold)
             for d in self.D:
-                model = SVF(self.method, self.inputs, self.outputs, self.data, 1, 0, d)
-                model.train()
-        #         for c in self.C:
-        #             for i in range(len(self.eps)):
-        #                 if self.verbose == True:
-        #                     print("     FOLD:", fold_num, "C:", c, "EPS:", self.eps[i])
-        #                 model.C = c
-        #                 model.eps = self.eps[i]
-        #                 model.d = d
-        #                 model.train()
-        #                 model.solve()
+                svf_model = SVF(self.method, self.inputs, self.outputs, self.data, 1, 0, d)
+                svf_model.model_d = svf_model.train()
+                for c in self.C:
+                    for e in self.eps:
+                        if self.verbose == True:
+                            print("     FOLD:", fold_num, "C:", c, "EPS:", e)
+                        svf_model.model = svf_model.modify_model(c,e)
+                        print(svf_model.model.export_to_string())
+                        svf_model.solution = svf_model.solve()
         #                 # print(deam.solution)
-        #                 error_bruto = self.calculate_cv_mse(fold.data_test, model)
+        #                 error_bruto = self.calculate_cv_mse(fold.data_test, svf_model)
         #                 # print(error_bruto)
         #                 self.results_by_fold = self.results_by_fold.append(
         #                     {
         #                         "Num": fold_num,
         #                         "C": c,
-        #                         "eps": self.eps[i],
+        #                         "eps": self.e,
         #                         "error": error_bruto,
         #                     },
         #                     ignore_index=True,
         #                 )
-        self.folds = list_fold
+        # self.folds = list_fold
         # self.results = self.results_by_fold.groupby(['C', 'eps']).sum() / self.n_folds
         # self.results = self.results.sort_index(ascending=False)
         # self.results = self.results.drop(['Num'], axis=1)
         # min_error = self.results[["error"]].idxmin().values
         # self.best_C = min_error[0][0]
         # self.best_eps = min_error[0][1]
+
+    def calculate_cv_mse(self, data_test, svf):
+        data_test_X = data_test.filter(self.inputs)
+        data_test_Y = data_test.filter(self.outputs)
+        n_dim_y = len(data_test_Y.columns)
+        error = 0
+        n_obs_test = len(data_test_X)
+        for i in range(n_obs_test):
+            x = data_test_X.iloc[i]
+            w = svf.solution.w
+            for j in range(n_dim_y):
+                y_est = svf.prediction(w[j], x)
+                y = data_test_Y.iloc[i, j]
+                error_obs = (y - y_est) ** 2
+                error = error + error_obs
+        return error / n_obs_test
