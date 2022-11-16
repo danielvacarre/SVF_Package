@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 VERSION = '0.0.2'
 DESCRIPTION = 'Paquete Support Vector Frontier'
-PACKAGE_NAME = 'SVF'
+PACKAGE_NAME = 'SVF_Methods'
 AUTHOR = 'Daniel Valero Carreras'
 EMAIL = 'dvalero@umh.es'
 GITHUB_URL = 'https://github.com/danielvacarre'
