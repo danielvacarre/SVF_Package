@@ -1,3 +1,4 @@
+from numpy import arange
 from SVF_Methods.SSVF import SSVF
 from SVF_Methods.SVFSolution import SVFSolution
 
@@ -51,6 +52,8 @@ class SVF:
         else:
             raise RuntimeError("The method selected doesn't exist")
         return model
+
+    #FUNCIONES DEL TRAIN
 
     def modify_model(self, c, eps):
         n_obs = len(self.data)
