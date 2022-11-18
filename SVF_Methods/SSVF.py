@@ -1,82 +1,13 @@
-from itertools import zip_longest, product
-from numpy import arange
 from docplex.mp.model import Model
+from SVF_Methods.SVF import SVF
+from SVF_Methods.SVF_GRID import SVF_GRID
 
-class SSVF():
+class SSVF(SVF):
 
-    def __init__(self, inputs, outputs, data, C, eps, d):
-        self.data = data
-        self.outputs = outputs
-        self.inputs = inputs
-        self.C = C
-        self.eps = eps
-        self.d = d
+    def __init__(self, method, inputs, outputs, data, C, eps, d):
+        super().__init__(method, inputs, outputs, data, C, eps, d)
 
-    def create_matrix_partitions(self,d):
-
-        x = self.data.filter(self.inputs)
-
-        # Numero de columnas x
-        n_dim = len(x.columns)
-        # Lista de listas de ts
-        t = list()
-        # Lista de indices (posiciones) para crear el vector de subind
-        t_ind = list()
-        for col in range(0, n_dim):
-            # Ts de la dimension col
-            ts = list()
-            t_max = x.iloc[:, col].max()
-            t_min = x.iloc[:, col].min()
-            amplitud = (t_max - t_min) / d
-            for i in range(0, d + 1):
-                t_i = t_min + i * amplitud
-                ts.append(t_i)
-            t.append(ts)
-            t_ind.append(arange(0, len(ts)))
-        return t, t_ind
-
-    def calculate_matrix_transformations(self):
-        x = self.data.filter(self.inputs)
-        x_list = x.values.tolist()
-        M = []
-        for x in x_list:
-            p = self.locate_position_observation(x)
-            phi = self.calculate_transformation_observation(p)
-            M.append(phi)
-        return M
-
-    def locate_position_observation(self, x):
-        p = []
-        # transpuesta de t para calcular el vector de posiciones de las observaciones
-        r = list(zip_longest(*self.t))
-        for l in range(0, len(self.t)):
-            for m in range(0, len(self.t[l])):
-                trans = self.transformation(x[l], r[m][l])
-                if trans < 0:
-                    p.append(m - 1)
-                    break
-                if trans == 0:
-                    p.append(m)
-                    break
-                if trans > 0 and m == len(self.t[l]) - 1:
-                    p.append(m)
-                    break
-        return p
-
-    def calculate_transformation_observation(self, p):
-        phi = []
-        n_dim = len(p)
-        for i in range(0, len(self.vector_subind)):
-            for j in range(0, n_dim):
-                if p[j] >= self.vector_subind[i][j]:
-                    r = 1
-                else:
-                    r = 0
-                    break
-            phi.append(r)
-        return phi
-
-    def train_ssvf(self):
+    def train(self):
 
         y_df = self.data.filter(self.outputs)
         y = y_df.values.tolist()
@@ -87,17 +18,13 @@ class SSVF():
         n_obs = len(y)
 
         #######################################################################
-        # Matriz de t y de indices de ts
-
-        self.t, t_ind = self.create_matrix_partitions(self.d)
-        # vector de subindices de w
-        self.vector_subind = list()
-        for combination in product(*t_ind):
-            self.vector_subind.append(combination)
-        self.matrix_phi = self.calculate_matrix_transformations()
+        # Crear el grid
+        self.grid = SVF_GRID(self.data, self.inputs, self.d)
+        self.grid.create_grid()
 
         # Numero de variables w
-        n_var = len(self.matrix_phi[0])
+        n_var = len(self.grid.df_grid.phi[0])
+
         #######################################################################
 
         # Variable w
@@ -111,7 +38,7 @@ class SSVF():
         xi = {}
         xi = xi.fromkeys(name_xi, self.C)
 
-        mdl = Model("SSVF Multioutput")
+        mdl = Model("SSVF C:" + str(self.C) + ", eps:" + str(self.eps) + ", d:" + str(self.d))
         mdl.context.cplex_parameters.threads = 1
 
         # Variable w
@@ -125,7 +52,7 @@ class SSVF():
         # Restricciones
         for i in range(0, n_obs):
             for dim_y in range(0, n_dim_y):
-                left_side = y[i][dim_y] - mdl.sum(w_var[dim_y, j] * self.matrix_phi[i][j] for j in range(0, n_var))
+                left_side = y[i][dim_y] - mdl.sum(w_var[dim_y, j] * self.grid.df_grid.phi[i][j] for j in range(0, n_var))
                 # (1)
                 mdl.add_constraint(
                     left_side <= 0,
@@ -138,27 +65,38 @@ class SSVF():
                 )
         return mdl
 
-    def transformation(self, x_i, t_k):
-        """Funcion que evalua si el valor de una celda es mayor o menor al de un nodo del grid.
-           Si es mayor devuelve 1, si es igual devuelve 0 y si es menor devuelve -1.
+    def modify_model(self, c, eps):
+        n_obs = len(self.data)
+        model = self.model.copy()
+        name_var = model.iter_variables()
+        name_w = list()
+        name_xi = list()
+        for var in name_var:
+            name = var.get_name()
+            if name.find("w") == -1:
+                name_xi.append(name)
+            else:
+                name_w.append(name)
+        # Variable w
+        w = {}
+        w = w.fromkeys(name_w, 1)
 
-        Parameters
-        ----------
-        x_i : float
-            Valor de la celda a evaluar
-        t_k : float
-            Valor del nodo con el que se quiere comparar
+        # Variable Xi
+        xi = {}
+        xi = xi.fromkeys(name_xi, c)
 
-        Returns
-        -------
-        res : int
-            Resultado de la transformacion
-        """
+        a = [model.get_var_by_name(i) * model.get_var_by_name(i) * w[i] for i in name_w]
+        b = [model.get_var_by_name(i) * xi[i] for i in name_xi]
+        # Funcion objetivo
+        model.minimize(model.sum(a) + model.sum(b))
+        # Modificar restricciones
+        for i in range(0, n_obs):
+            for r in range(len(self.outputs)):
+                const_name = 'c2_' + str(i) + "_" + str(r)
+                rest = model.get_constraint_by_name(const_name)
+                rest.rhs += eps
+        return model
 
-        z = x_i - t_k
-        if z < 0:
-            return -1
-        elif z == 0:
-            return 0
-        else:
-            return 1
+
+
+

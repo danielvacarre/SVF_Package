@@ -1,18 +1,13 @@
-from itertools import product, zip_longest
-
-import numpy
-from numpy import arange, transpose
+from itertools import product
+from numpy import arange
 from pandas import DataFrame
 
+from SVF_Methods.GRID import GRID
 
-class SVF_GRID:
+class SVF_GRID(GRID):
 
     def __init__(self, data, inputs, d):
-        self.data = data
-        self.inputs = inputs
-        self.d = d
-        self.df_grid = None
-        self.knot_list = None
+        super().__init__(data, inputs,d)
 
     def create_grid(self):
         """
@@ -43,30 +38,6 @@ class SVF_GRID:
         self.df_grid["value"] = list(product(*knot_list))
         self.knot_list = knot_list
         self.calculate_df_grid_phi()
-
-    def search_observation(self, obs):
-        """
-            Función que devuelve la celda en la que se encuentra una observación en el grid
-        Args:
-            obs (list): Observación a buscar en el grid
-        Returns:
-            position (list): Vector con la posición de la observación en el grid
-        """
-        position = list()
-        r = transpose(self.knot_list)
-        for l in range(0, len(self.knot_list)):
-            for m in range(0, len(self.knot_list[l])):
-                trans = self.transformation(obs[l], r[m][l])
-                if trans < 0:
-                    position.append(m - 1)
-                    break
-                if trans == 0:
-                    position.append(m)
-                    break
-                if trans > 0 and m == len(self.knot_list[l]) - 1:
-                    position.append(m)
-                    break
-        return position
 
     def calculate_phi_observation(self,position):
         """

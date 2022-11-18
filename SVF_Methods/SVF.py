@@ -1,7 +1,4 @@
-from numpy import arange
-from SVF_Methods.SSVF import SSVF
 from SVF_Methods.SVFSolution import SVFSolution
-
 
 class SVF:
     """
@@ -27,37 +24,15 @@ class SVF:
         self.C = C
         self.eps = eps
         self.d = d
-        self.t = None
-        self.vector_subind = None
-        self.matrix_phi = None
+        self.grid = None
         self.model = None
+        self.model_d = None
         self.solution = None
         self.name = None
-        self.model_d = None
-
-    def train(self):
-        """
-            Método para entrenar el modelo generado. Se selecciona el algoritmo seleccionado y se entrena.
-        """
-        if self.method == "SVF-SP":
-            print("SVF-SP")
-            #self.train_svf_sp()
-        elif self.method == "SSVF":
-            print("SSVF")
-            ssvf = SSVF(self.inputs,self.outputs,self.data, self.C, self.eps, self.d)
-            model = ssvf.train_ssvf()
-        elif self.method == "SVF":
-            print("SVF")
-            #self.train_svf()
-        else:
-            raise RuntimeError("The method selected doesn't exist")
-        return model
-
-    #FUNCIONES DEL TRAIN
 
     def modify_model(self, c, eps):
         n_obs = len(self.data)
-        model = self.model_d.copy()
+        model = self.model_d.model.copy()
         name_var = model.iter_variables()
         name_w = list()
         name_xi = list()
@@ -86,7 +61,7 @@ class SVF:
                 rest = model.get_constraint_by_name(const_name)
                 rest.rhs += eps
         return model
-            
+
     def solve(self):
         n_dim_y = len(self.outputs)
         self.model.solve()
@@ -108,4 +83,13 @@ class SVF:
             for j in range(0, n_w_dim):
                 mat_w[i].append(round(sol_w[cont], 6))
                 cont += 1
-        return SVFSolution(mat_w, sol_xi)
+        self.solution = SVFSolution(mat_w, sol_xi)
+
+    def estimation(self,x):
+        p = self.grid.search_observation(x)
+        phi = self.grid.calculate_phi_observation(p)
+        prediction = 0
+        for i in range(0, len(self.solution.w)):
+            #TODO: ver que falla
+            prediction = prediction + self.solution.w[i] * phi[i]
+        return prediction

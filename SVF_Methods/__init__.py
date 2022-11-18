@@ -1,3 +1,3 @@
-from SVF_Methods.CV import CrossValidation
-from SVF_Methods.SVF import SVF
-from SVF_Methods.SVF_GRID import SVF_GRID
+from SVF_Methods import CV
+from SVF_Methods import SVF
+from SVF_Methods import SVF_GRID
