@@ -1,7 +1,9 @@
 from itertools import product
 from numpy import arange
 from pandas import DataFrame
+
 from svf_package.grid.grid import GRID
+
 
 class SVF_SPLINES_GRID(GRID):
 
@@ -11,15 +13,15 @@ class SVF_SPLINES_GRID(GRID):
         Args:
             data (pandas.DataFrame): conjunto de datos sobre los que se construye el grid
             inputs (list): listado de inputs
-            d (list): número de particiones en las que se divide el grid
+            d (int): número de particiones en las que se divide el grid
         """
-        super().__init__(data, inputs,d)
+        super().__init__(data, inputs, d)
 
     def create_grid(self):
         """
             Función que crea un grid en base a unos datos e hiperparámetro d
         """
-        self.df_grid = DataFrame(columns=["id_cell","value","phi"])
+        self.df_grid = DataFrame(columns=["id_cell", "value", "phi"])
         x = self.data.filter(self.inputs)
         # Numero de columnas x
         n_dim = len(x.columns)
@@ -43,11 +45,11 @@ class SVF_SPLINES_GRID(GRID):
         self.knot_list = knot_list
         self.calculate_df_grid_phi()
 
-    def calculate_phi_observation(self,dmu):
+    def calculate_phi_observation(self, dmu):
         """
             Función que calcula el valor de la transformación (phi) de una observación en el grid.
         Args:
-            position (list): Posición de la observación en el grid
+            dmu (list): Observación a evaluar
 
         Returns:
             list: Vector de 1 0 con la transformación del vector en base al grid

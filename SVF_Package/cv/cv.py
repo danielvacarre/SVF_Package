@@ -3,7 +3,7 @@ from sklearn.model_selection import KFold, train_test_split
 
 from svf_package.cv.fold import FOLD
 from svf_package.svf import SVF
-from svf_package.train_function import train, modify_model
+from svf_package.svf_functions import train, modify_model
 
 
 class CrossValidation(object):

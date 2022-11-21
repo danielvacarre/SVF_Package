@@ -2,7 +2,6 @@ from numpy import transpose
 
 
 class GRID:
-
     """
         Clase grid sobre el que se realiza el módelo SVF. Un grid es una partición del espacio de los inputs que está divido por celdas
     """
@@ -44,3 +43,25 @@ class GRID:
                     position.append(m)
                     break
         return position
+
+    def transformation(self, x_i, t_k):
+        """
+        Funcion que evalua si el valor de una observación es mayor o menor al de un nodo del grid.
+        Si es mayor devuelve 1, si es igual devuelve 0 y si es menor devuelve -1.
+
+        Args:
+            x_i (float) : Valor de la celda a evaluar
+
+            t_k (float) : Valor del nodo con el que se quiere comparar
+
+        Returns:
+            res (int): Resultado de la transformacion
+        """
+
+        z = x_i - t_k
+        if z < 0:
+            return -1
+        elif z == 0:
+            return 0
+        else:
+            return 1

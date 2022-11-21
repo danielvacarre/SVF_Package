@@ -1,7 +1,7 @@
 class FOLD:
+    """Clase fold para validación cruzada
     """
-        Clase fold para validación cruzada
-    """
+
     def __init__(self, data_train, data_test, num):
         """
             Constructor de la clase fold

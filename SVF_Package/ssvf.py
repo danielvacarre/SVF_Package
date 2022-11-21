@@ -1,15 +1,31 @@
 from docplex.mp.model import Model
-
 from svf_package.grid.svf_grid import SVF_GRID
 from svf_package.svf import SVF
+from svf_package.svf_solution import SVFSolution
 
 
 class SSVF(SVF):
 
+    """Clase del modelo SVF Simplificado
+    """
+
     def __init__(self, method, inputs, outputs, data, C, eps, d):
+        """Constructor de la clase SSVF
+
+        Args:
+            method (string): Método SVF que se quiere utilizar
+            inputs (list): Inputs a evaluar en el conjunto de dato
+            outputs (list): Outputs a evaluar en el conjunto de datos
+            data (pandas.DataFrame): Conjunto de datos a evaluar
+            C (float): Valores del hiperparámetro C del modelo
+            eps (float): Valores del hiperparámetro épsilon del modelo
+            d (int): Valor del hiperparámetro d del modelo
+        """
         super().__init__(method, inputs, outputs, data, C, eps, d)
 
     def train(self):
+        """Metodo que entrena un modelo SSVF
+        """
 
         y_df = self.data.filter(self.outputs)
         y = y_df.values.tolist()
@@ -65,9 +81,17 @@ class SSVF(SVF):
                     -left_side <= self.eps + xi_var[dim_y, i],
                     ctname='c2_' + str(i) + "_" + str(dim_y)
                 )
-        return mdl
+        self.model = mdl
 
     def modify_model(self, c, eps):
+        """Método que se utiliza para modificar el valor de C y las restricciones de un modelo
+        Args:
+            c (float): Valores del hiperparámetro C del modelo_
+            eps (float): Valores del hiperparámetro épsilon del modelo
+
+        Returns:
+            docplex.mp.model.Model: modelo SVF modificado
+        """
         n_obs = len(self.data)
         model = self.model.copy()
         name_var = model.iter_variables()
@@ -98,3 +122,29 @@ class SSVF(SVF):
                 rest = model.get_constraint_by_name(const_name)
                 rest.rhs += eps
         return model
+
+    def solve(self):
+        """Solución de un modelo SVF
+        """
+        n_dim_y = len(self.outputs)
+        self.model.solve()
+        name_var = self.model.iter_variables()
+        sol_w = list()
+        sol_xi = list()
+        for var in name_var:
+            name = var.get_name()
+            sol = self.model.solution[name]
+            if name.find("w") == -1:
+                sol_xi.append(sol)
+            else:
+                sol_w.append(sol)
+        # Numero de ws por dimension
+        n_w_dim = int(len(sol_w) / n_dim_y)
+        mat_w = [[] for _ in range(0, n_dim_y)]
+        cont = 0
+        for i in range(0, n_dim_y):
+            for j in range(0, n_w_dim):
+                mat_w[i].append(round(sol_w[cont], 6))
+                cont += 1
+        self.solution = SVFSolution(mat_w, sol_xi)
+

@@ -1,11 +1,11 @@
 from itertools import product
 from numpy import arange
 from pandas import DataFrame
+
 from svf_package.grid.grid import GRID
 
 
 class SVF_GRID(GRID):
-
     """
         Clase generadora de un grid SVF. Sirve tanto para SVF como SSVF
     """
@@ -18,14 +18,14 @@ class SVF_GRID(GRID):
             inputs (list): listado de inputs
             d (list): número de particiones en las que se divide el grid
         """
-        super().__init__(data, inputs,d)
+        super().__init__(data, inputs, d)
 
     def create_grid(self):
         """
             Función que crea un grid en base a unos datos e hiperparámetro d
         """
 
-        self.df_grid = DataFrame(columns=["id_cell","value","phi"])
+        self.df_grid = DataFrame(columns=["id_cell", "value", "phi"])
         x = self.data.filter(self.inputs)
         # Numero de columnas x
         n_dim = len(x.columns)
@@ -50,7 +50,7 @@ class SVF_GRID(GRID):
         self.knot_list = knot_list
         self.calculate_df_grid_phi()
 
-    def calculate_phi_observation(self,position):
+    def calculate_phi_observation(self, position):
         """
             Función que calcula el valor de la transformación (phi) de una observación en el grid.
         Args:
@@ -70,28 +70,6 @@ class SVF_GRID(GRID):
                     break
             phi.append(value)
         return phi
-
-    def transformation(self, x_i, t_k):
-        """
-        Funcion que evalua si el valor de una observación es mayor o menor al de un nodo del grid.
-        Si es mayor devuelve 1, si es igual devuelve 0 y si es menor devuelve -1.
-
-        Args:
-            x_i (float) : Valor de la celda a evaluar
-
-            t_k (float) : Valor del nodo con el que se quiere comparar
-
-        Returns:
-            res (int): Resultado de la transformacion
-        """
-
-        z = x_i - t_k
-        if z < 0:
-            return -1
-        elif z == 0:
-            return 0
-        else:
-            return 1
 
     def calculate_df_grid_phi(self):
         """Método para añadir al dataframe grid el valor de la transformada de cada observación
