@@ -7,4 +7,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
+  <component name="PackageRequirementsSettings">
+    <option name="requirementsPath" value="G:\Mi unidad\CIO_Drive\Proyectos\SVF_Package\requeriments.txt" />
+    <option name="removeUnused" value="true" />
+  </component>
 </module>

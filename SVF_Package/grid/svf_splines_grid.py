@@ -3,16 +3,11 @@ from numpy import arange
 from pandas import DataFrame
 from svf_package.grid.grid import GRID
 
-
-class SVF_GRID(GRID):
-
-    """
-        Clase generadora de un grid SVF. Sirve tanto para SVF como SSVF
-    """
+class SVF_SPLINES_GRID(GRID):
 
     def __init__(self, data, inputs, d):
         """
-            Constructor de la clase SVF_GRID
+            Constructor de la clase SVF_SPLINES_GRID
         Args:
             data (pandas.DataFrame): conjunto de datos sobre los que se construye el grid
             inputs (list): listado de inputs
@@ -24,7 +19,6 @@ class SVF_GRID(GRID):
         """
             Función que crea un grid en base a unos datos e hiperparámetro d
         """
-
         self.df_grid = DataFrame(columns=["id_cell","value","phi"])
         x = self.data.filter(self.inputs)
         # Numero de columnas x
@@ -35,14 +29,13 @@ class SVF_GRID(GRID):
         knot_index = list()
         for col in range(0, n_dim):
             # knots de la dimension col
-            knot = list()
+            knot = [0]
             knot_max = x.iloc[:, col].max()
             knot_min = x.iloc[:, col].min()
             amplitud = (knot_max - knot_min) / self.d
             for i in range(0, self.d + 1):
                 knot_i = knot_min + i * amplitud
                 knot.append(knot_i)
-
             knot_list.append(knot)
             knot_index.append(arange(0, len(knot)))
         self.df_grid["id_cell"] = list(product(*knot_index))
@@ -50,7 +43,7 @@ class SVF_GRID(GRID):
         self.knot_list = knot_list
         self.calculate_df_grid_phi()
 
-    def calculate_phi_observation(self,position):
+    def calculate_phi_observation(self,dmu):
         """
             Función que calcula el valor de la transformación (phi) de una observación en el grid.
         Args:
@@ -59,39 +52,18 @@ class SVF_GRID(GRID):
         Returns:
             list: Vector de 1 0 con la transformación del vector en base al grid
         """
-        phi = []
-        n_dim = len(position)
-        for i in range(0, len(self.df_grid)):
-            for j in range(0, n_dim):
-                if position[j] >= self.df_grid["id_cell"][i][j]:
-                    value = 1
+        phi_list = []
+        n_dim = len(dmu)
+        for j in range(0, n_dim):
+            phi = [1]
+            for i in range(0, len(self.knot_list[j])):
+                if dmu[j] >= self.knot_list[j][i]:
+                    value = dmu[j] - self.knot_list[j][i]
                 else:
                     value = 0
-                    break
-            phi.append(value)
-        return phi
-
-    def transformation(self, x_i, t_k):
-        """
-        Funcion que evalua si el valor de una observación es mayor o menor al de un nodo del grid.
-        Si es mayor devuelve 1, si es igual devuelve 0 y si es menor devuelve -1.
-
-        Args:
-            x_i (float) : Valor de la celda a evaluar
-
-            t_k (float) : Valor del nodo con el que se quiere comparar
-
-        Returns:
-            res (int): Resultado de la transformacion
-        """
-
-        z = x_i - t_k
-        if z < 0:
-            return -1
-        elif z == 0:
-            return 0
-        else:
-            return 1
+                phi.append(value)
+            phi_list.append(phi)
+        return phi_list
 
     def calculate_df_grid_phi(self):
         """Método para añadir al dataframe grid el valor de la transformada de cada observación
@@ -99,8 +71,7 @@ class SVF_GRID(GRID):
         x = self.df_grid["value"]
         x_list = x.values.tolist()
         phi_list = list()
-        for x in x_list:
-            p = self.search_observation(x)
-            phi = self.calculate_phi_observation(p)
+        for dmu in x_list:
+            phi = self.calculate_phi_observation(dmu)
             phi_list.append(phi)
         self.df_grid["phi"] = phi_list

@@ -3,12 +3,14 @@ from sklearn.model_selection import KFold, train_test_split
 
 from svf_package.cv.fold import FOLD
 from svf_package.svf import SVF
-from svf_package.cv.functions_cv import train
+from svf_package.train_function import train, modify_model
 
 
 class CrossValidation(object):
+    """ Clase validación cruzada
+    """
 
-    def __init__(self, method, inputs, outputs, data, C, eps, D, seed=0, n_folds=0, verbose=False,ts=0):
+    def __init__(self, method, inputs, outputs, data, C, eps, D, seed=0, n_folds=0, verbose=False, ts=0):
         """Constructor del objeto validació cruzada. Realiza un train-test o una k-folds en base al número de folds seleccionado
 
         Args:
@@ -45,8 +47,7 @@ class CrossValidation(object):
         self.best_d = None
 
     def cv(self):
-        """
-            Función que ejecuta el tipo de validación cruzada:
+        """Función que ejecuta el tipo de validación cruzada:
                 >1: aplica el método k_folds
                 
                <=1: aplica el método train-test
@@ -58,8 +59,7 @@ class CrossValidation(object):
             self.train_test()
 
     def kfolds(self):
-        """
-            Función que ejecuta la validación cruzada por k-folds
+        """Función que ejecuta la validación cruzada por k-folds
         """
         kf = KFold(n_splits=self.n_folds, shuffle=True, random_state=self.seed)
         fold_num = 0
@@ -75,9 +75,9 @@ class CrossValidation(object):
                 svf.grid = svf.model_d.grid
                 for c in self.C:
                     for e in self.eps:
-                        if self.verbose == True:
+                        if self.verbose:
                             print("     FOLD:", fold_num, "C:", c, "EPS:", e, "D:", d)
-                        svf.model = svf.modify_model(c,e)
+                        svf.model = modify_model(svf.model_d, c, e)
                         svf.solve()
                     error = self.calculate_cv_mse(fold.data_test, svf)
                     self.results_by_fold = self.results_by_fold.append(
@@ -98,10 +98,9 @@ class CrossValidation(object):
         self.best_C = min_error[0][0]
         self.best_eps = min_error[0][1]
         self.best_d = min_error[0][2]
-        
+
     def train_test(self):
-        """
-            Función que ejecuta la validación cruzada por un porcentaje de train-test
+        """Función que ejecuta la validación cruzada por un porcentaje de train-test
         """
         data_train, data_test = train_test_split(self.data, test_size=self.ts, random_state=self.seed)
         list_fold = list()
@@ -113,9 +112,9 @@ class CrossValidation(object):
             svf.grid = svf.model_d.grid
             for c in self.C:
                 for e in self.eps:
-                    if self.verbose == True:
+                    if self.verbose:
                         print("     FOLD:", "TRAIN-TEST", "C:", c, "EPS:", e, "D:", d)
-                    svf.model = svf.modify_model(c,e)
+                    svf.model = modify_model(svf.model_d, c, e)
                     svf.solve()
                 error = self.calculate_cv_mse(fold.data_test, svf)
                 self.results_by_fold = self.results_by_fold.append(
@@ -138,15 +137,14 @@ class CrossValidation(object):
         self.best_d = min_error.d
 
     def calculate_cv_mse(self, data_test, svf):
-        """
-            Función que calcula el Mean Square Error (MSE) del cross-validation
+        """Función que calcula el Mean Square Error (MSE) del cross-validation
 
         Args:
             data_test (pandas.DataFrame): conjunto de datos de test sobre los que se va a evaluar el MSE
-            svf (SVF_Methods.SVF.SVF): modelo SVF sobre el que se va a evaluar los datos de test. Contiene los pesos (w) y el grid para calcular la estimación
+            svf (svf_package.svf.SVF): modelo SVF sobre el que se va a evaluar los datos de test. Contiene los pesos (w) y el grid para calcular la estimación
 
         Returns:
-            mse (float): Mean Square Error obtenido para ese modelo y conjunto de datos
+            float: Mean Square Error obtenido para ese modelo y conjunto de datos
         """
         data_test_X = data_test.filter(self.inputs)
         data_test_Y = data_test.filter(self.outputs)
@@ -154,8 +152,8 @@ class CrossValidation(object):
         error = 0
         n_obs_test = len(data_test_X)
         for i in range(n_obs_test):
-            obs = data_test.iloc[i]
-            y_est = svf.estimation(obs)
+            dmu = data_test.iloc[i]
+            y_est = svf.estimation(dmu)
             for j in range(n_dim_y):
                 y = data_test_Y.iloc[i, j]
                 error_obs = (y - y_est[j]) ** 2
