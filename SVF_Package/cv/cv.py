@@ -1,14 +1,14 @@
 from pandas import DataFrame
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 
-from SVF_Methods.FOLD import FOLD
-from SVF_Methods.SVF import SVF
-from functions import train
+from svf_package.cv.fold import FOLD
+from svf_package.svf import SVF
+from svf_package.cv.functions_cv import train
 
 
 class CrossValidation(object):
 
-    def __init__(self, method, inputs, outputs, data, C, eps, D, seed=0, n_folds=0, verbose=False):
+    def __init__(self, method, inputs, outputs, data, C, eps, D, seed=0, n_folds=0, verbose=False,ts=0):
         """Constructor del objeto validació cruzada. Realiza un train-test o una k-folds en base al número de folds seleccionado
 
         Args:
@@ -23,6 +23,7 @@ class CrossValidation(object):
             n_folds (int, optional):Número de folds del método de validación cruzada (<=1, indica que se aplica un train-test de 80%
             train-20%test,>2, indica que se aplican n_folds. Defaults to 0.
             verbose (bool, optional): Indica si se quiere mostrar por pantalla los registros de la validación cruzada. Defaults to False.
+            ts (float): indica el porcentaje de datos de test a utilizar en la cv
         """
 
         self.method = method
@@ -34,6 +35,7 @@ class CrossValidation(object):
         self.D = D
         self.seed = seed
         self.n_folds = n_folds
+        self.ts = ts
         self.verbose = verbose
         self.results = None
         self.results_by_fold = None
@@ -53,12 +55,11 @@ class CrossValidation(object):
         if self.n_folds > 1:
             self.kfolds()
         else:
-            pass
-            # self.train_test()
+            self.train_test()
 
     def kfolds(self):
         """
-            Función que ejecuta un k-folds al conjunto de datos seleccionado con el método SVF seleccionado.
+            Función que ejecuta la validación cruzada por k-folds
         """
         kf = KFold(n_splits=self.n_folds, shuffle=True, random_state=self.seed)
         fold_num = 0
@@ -72,36 +73,81 @@ class CrossValidation(object):
                 svf = SVF(self.method, self.inputs, self.outputs, fold.data_train, 1, 0, d)
                 svf.model_d = train(self.method, self.inputs, self.outputs, fold.data_train, 1, 0, d)
                 svf.grid = svf.model_d.grid
-                self.results = svf
                 for c in self.C:
                     for e in self.eps:
                         if self.verbose == True:
-                            print("     FOLD:", fold_num, "C:", c, "EPS:", e)
+                            print("     FOLD:", fold_num, "C:", c, "EPS:", e, "D:", d)
                         svf.model = svf.modify_model(c,e)
-                        # print(svf.model.export_to_string())
                         svf.solve()
-                    error_bruto = self.calculate_cv_mse(fold.data_test, svf)
-                    # print(error_bruto)
+                    error = self.calculate_cv_mse(fold.data_test, svf)
                     self.results_by_fold = self.results_by_fold.append(
                         {
                             "Num": fold_num,
                             "C": c,
                             "eps": e,
                             "d": d,
-                            "error": error_bruto,
+                            "error": error,
                         },
                         ignore_index=True,
                     )
         self.folds = list_fold
-        self.results = self.results_by_fold.groupby(['C', 'eps']).sum() / self.n_folds
+        self.results = self.results_by_fold.groupby(['C', 'eps', 'd']).sum() / self.n_folds
         self.results = self.results.sort_index(ascending=False)
         self.results = self.results.drop(['Num'], axis=1)
         min_error = self.results[["error"]].idxmin().values
         self.best_C = min_error[0][0]
         self.best_eps = min_error[0][1]
+        self.best_d = min_error[0][2]
+        
+    def train_test(self):
+        """
+            Función que ejecuta la validación cruzada por un porcentaje de train-test
+        """
+        data_train, data_test = train_test_split(self.data, test_size=self.ts, random_state=self.seed)
+        list_fold = list()
+        fold = FOLD(data_train, data_test, "TRAIN-TEST")
+        list_fold.append(fold)
+        for d in self.D:
+            svf = SVF(self.method, self.inputs, self.outputs, fold.data_train, 1, 0, d)
+            svf.model_d = train(self.method, self.inputs, self.outputs, fold.data_train, 1, 0, d)
+            svf.grid = svf.model_d.grid
+            for c in self.C:
+                for e in self.eps:
+                    if self.verbose == True:
+                        print("     FOLD:", "TRAIN-TEST", "C:", c, "EPS:", e, "D:", d)
+                    svf.model = svf.modify_model(c,e)
+                    svf.solve()
+                error = self.calculate_cv_mse(fold.data_test, svf)
+                self.results_by_fold = self.results_by_fold.append(
+                    {
+                        "Num": "TRAIN-TEST",
+                        "C": c,
+                        "eps": e,
+                        "d": d,
+                        "error": error,
+                    },
+                    ignore_index=True,
+                )
+        self.folds = list_fold
+        self.results = self.results_by_fold.sort_index(ascending=False)
+        self.results = self.results.drop(['Num'], axis=1)
+        min_error = self.results[self.results.error == self.results.error.min()]
+        min_error = min_error.iloc[-1]
+        self.best_C = min_error.C
+        self.best_eps = min_error.eps
+        self.best_d = min_error.d
 
     def calculate_cv_mse(self, data_test, svf):
-        print(svf.grid)
+        """
+            Función que calcula el Mean Square Error (MSE) del cross-validation
+
+        Args:
+            data_test (pandas.DataFrame): conjunto de datos de test sobre los que se va a evaluar el MSE
+            svf (SVF_Methods.SVF.SVF): modelo SVF sobre el que se va a evaluar los datos de test. Contiene los pesos (w) y el grid para calcular la estimación
+
+        Returns:
+            mse (float): Mean Square Error obtenido para ese modelo y conjunto de datos
+        """
         data_test_X = data_test.filter(self.inputs)
         data_test_Y = data_test.filter(self.outputs)
         n_dim_y = len(data_test_Y.columns)
@@ -114,4 +160,5 @@ class CrossValidation(object):
                 y = data_test_Y.iloc[i, j]
                 error_obs = (y - y_est[j]) ** 2
                 error = error + error_obs
-        return error / n_obs_test
+        mse = error / n_obs_test
+        return mse

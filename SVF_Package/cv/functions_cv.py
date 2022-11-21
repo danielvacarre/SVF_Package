@@ -1,4 +1,4 @@
-from SVF_Methods.SSVF import SSVF
+from svf_package.ssvf import SSVF
 
 def train(method, inputs, outputs, data, C, eps, d):
     """

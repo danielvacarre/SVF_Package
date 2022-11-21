@@ -1,6 +1,8 @@
 from docplex.mp.model import Model
-from SVF_Methods.SVF import SVF
-from SVF_Methods.SVF_GRID import SVF_GRID
+
+from svf_package.grid.svf_grid import SVF_GRID
+from svf_package.svf import SVF
+
 
 class SSVF(SVF):
 
@@ -96,7 +98,3 @@ class SSVF(SVF):
                 rest = model.get_constraint_by_name(const_name)
                 rest.rhs += eps
         return model
-
-
-
-

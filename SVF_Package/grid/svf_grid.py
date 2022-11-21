@@ -1,8 +1,8 @@
 from itertools import product
 from numpy import arange
 from pandas import DataFrame
+from svf_package.grid.grid import GRID
 
-from SVF_Methods.GRID import GRID
 
 class SVF_GRID(GRID):
 

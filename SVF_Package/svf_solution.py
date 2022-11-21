@@ -1,4 +1,3 @@
-
 class SVFSolution:
 
     def __init__(self, w, xi):

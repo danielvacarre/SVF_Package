@@ -1,4 +1,4 @@
-from SVF_Methods.SVFSolution import SVFSolution
+from svf_package.svf_solution import SVFSolution
 
 class SVF:
     """
@@ -88,8 +88,10 @@ class SVF:
     def estimation(self,x):
         p = self.grid.search_observation(x)
         phi = self.grid.calculate_phi_observation(p)
+        prediction_list = list()
         prediction = 0
-        for i in range(0, len(self.solution.w)):
-            #TODO: ver que falla
-            prediction = prediction + self.solution.w[i] * phi[i]
-        return prediction
+        for i in range(0, len(self.outputs)):
+            for j in range (len(self.solution.w)):
+                prediction = prediction + self.solution.w[i][j] * phi[i]
+            prediction_list.append(prediction)
+        return prediction_list
