@@ -1,5 +1,5 @@
 from itertools import product
-from numpy import arange
+from numpy import arange, asarray, float32
 from pandas import DataFrame
 
 from svf_package.grid.grid import GRID
@@ -48,7 +48,8 @@ class SVF_GRID(GRID):
         self.df_grid["id_cell"] = list(product(*knot_index))
         self.df_grid["value"] = list(product(*knot_list))
         self.knot_list = knot_list
-        self.calculate_df_grid_phi()
+        self.calculate_df_grid()
+        self.calculate_data_grid()
 
     def calculate_phi_observation(self, position):
         """
@@ -71,14 +72,49 @@ class SVF_GRID(GRID):
             phi.append(value)
         return phi
 
-    def calculate_df_grid_phi(self):
+    def calculate_df_grid(self):
         """Método para añadir al dataframe grid el valor de la transformada de cada observación
         """
         x = self.df_grid["value"]
         x_list = x.values.tolist()
         phi_list = list()
+        c_cells = list()
         for x in x_list:
             p = self.search_observation(x)
             phi = self.calculate_phi_observation(p)
             phi_list.append(phi)
+        for index,cell in self.df_grid.iterrows():
+            c_cell = search_contiguous_cell(cell['id_cell'])
+            c_cells.append(c_cell)
         self.df_grid["phi"] = phi_list
+        self.df_grid["c_cells"] = c_cells
+
+    def calculate_data_grid(self):
+        """Método para añadir al dataframe grid el valor de la transformada de cada observación
+        """
+        self.data_grid = self.data.copy()
+        x = self.data_grid.filter(self.inputs)
+        x_list = x.values.tolist()
+        phi_list = list()
+        c_cells = list()
+        for x in x_list:
+            p = self.search_observation(x)
+            phi = self.calculate_phi_observation(p)
+            phi_list.append(phi)
+            c_cell = search_contiguous_cell(p)
+            c_cells.append(c_cell)
+        self.data_grid["phi"] = phi_list
+        self.data_grid["c_cells"] = c_cells
+
+def search_contiguous_cell(cell):
+    con_c_list = list()
+    cell = list(cell)
+    for dim in range(len(cell)):
+        value = (cell[dim]) - 1
+        con_cell = cell.copy()
+        if value >= 0:
+            con_cell[dim] = value
+            con_c_list.append(tuple(con_cell))
+    return con_c_list
+
+

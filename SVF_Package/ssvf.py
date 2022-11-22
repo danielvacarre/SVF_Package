@@ -5,7 +5,6 @@ from svf_package.svf_solution import SVFSolution
 
 
 class SSVF(SVF):
-
     """Clase del modelo SVF Simplificado
     """
 
@@ -41,7 +40,7 @@ class SSVF(SVF):
         self.grid.create_grid()
 
         # Numero de variables w
-        n_var = len(self.grid.df_grid.phi[0])
+        n_var = len(self.grid.data_grid.phi[0])
 
         #######################################################################
 
@@ -70,7 +69,7 @@ class SSVF(SVF):
         # Restricciones
         for i in range(0, n_obs):
             for dim_y in range(0, n_dim_y):
-                left_side = y[i][dim_y] - mdl.sum(w_var[dim_y, j] * self.grid.df_grid.phi[i][j] for j in range(0, n_var))
+                left_side = y[i][dim_y] - mdl.sum(w_var[dim_y, j] * self.grid.data_grid.phi[i][j] for j in range(0, n_var))
                 # (1)
                 mdl.add_constraint(
                     left_side <= 0,

@@ -1,5 +1,6 @@
 from svf_package.ssvf import SSVF
 from svf_package.svf_splines import SVF_SP
+from svf_package.svfc import SVFC
 
 
 def train(method, inputs, outputs, data, c, eps, d):
@@ -29,12 +30,11 @@ def train(method, inputs, outputs, data, c, eps, d):
         svf.train()
     elif method == "SVF":
         pass
-        # print("SVF")
-        # self.train_svf()
+        svf = SVFC(method, inputs, outputs, data, c, eps, d)
+        svf.train()
     else:
         raise RuntimeError("The method selected doesn't exist")
     return svf
-
 
 def modify_model(obj_SVF, c, eps):
     """Método que devuelve un modelo SVF en docplex modificado

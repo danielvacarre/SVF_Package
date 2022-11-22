@@ -1,5 +1,3 @@
-from svf_package.svf_solution import SVFSolution
-
 class SVF:
     """Clase del algoritmo Support Vector Frontiers
     """
@@ -27,8 +25,6 @@ class SVF:
         self.model_d = None
         self.solution = None
         self.name = None
-
-
 
     def estimation(self,x):
         """Estimacion de una DMU escogida. y=phi(x)*w

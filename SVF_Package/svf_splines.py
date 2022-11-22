@@ -124,9 +124,6 @@ class SVF_SP(SVF):
         n_out = len(self.outputs)
         n_dmu = len(self.data)
         model = self.model.copy()
-        # print("=====================================")
-        # print(model.export_to_string())
-        # print("=====================================")
         name_var = model.iter_variables()
         name_w = list()
         name_xi = list()
@@ -139,7 +136,6 @@ class SVF_SP(SVF):
         # Variable w
         w = {}
         w = w.fromkeys(name_w, 1)
-
         # Variable Xi
         xi = {}
         xi = xi.fromkeys(name_xi, c)
