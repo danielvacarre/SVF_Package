@@ -18,6 +18,7 @@ class GRID:
         self.inputs = inputs
         self.d = d
         self.df_grid = None
+        self.data_grid = None
         self.knot_list = None
 
     def search_observation(self, dmu):
