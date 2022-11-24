@@ -21,7 +21,7 @@ def train(method, inputs, outputs, data, c, eps, d):
     Returns:
         svf_package.svf.SVF: Devuelve un modelo SVF del método escogido
     """
-    svf = None
+
     if method == "SVF-SP":
         svf = SVF_SP(method, inputs, outputs, data, c, eps, d)
         svf.train()
@@ -29,7 +29,6 @@ def train(method, inputs, outputs, data, c, eps, d):
         svf = SSVF(method, inputs, outputs, data, c, eps, d)
         svf.train()
     elif method == "SVF":
-        pass
         svf = SVFC(method, inputs, outputs, data, c, eps, d)
         svf.train()
     else:

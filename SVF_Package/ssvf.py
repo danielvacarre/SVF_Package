@@ -30,28 +30,29 @@ class SSVF(SVF):
         y = y_df.values.tolist()
 
         # Numero de dimensiones y del problema
-        n_dim_y = len(y_df.columns)
+        n_out = len(y_df.columns)
         # Numero de observaciones del problema
         n_obs = len(y)
 
         #######################################################################
         # Crear el grid
-        self.grid = SVF_GRID(self.data, self.inputs, self.outputs, self.d )
+        self.grid = SVF_GRID(self.data, self.inputs, self.outputs, self.d)
         self.grid.create_grid()
 
         # Numero de variables w
-        n_var = len(self.grid.data_grid.phi[0])
+        n_var = len(self.grid.data_grid.phi[0][0])
+        print(n_var)
 
         #######################################################################
 
         # Variable w
         # name_w: (i,j)-> i:es el indice de la columna de la matriz phi;j: es el indice de la dimension de y
-        name_w = [(i, j) for i in range(0, n_dim_y) for j in range(0, n_var)]
+        name_w = [(out, w_var) for out in range(n_out) for w_var in range(n_var)]
         w = {}
         w = w.fromkeys(name_w, 1)
 
         # Variable Xi
-        name_xi = [(i, j) for i in range(0, n_dim_y) for j in range(0, n_obs)]
+        name_xi = [(out, obs) for out in range(n_out) for obs in range(n_obs)]
         xi = {}
         xi = xi.fromkeys(name_xi, self.C)
 
@@ -64,21 +65,21 @@ class SSVF(SVF):
         xi_var = mdl.continuous_var_dict(name_xi, ub=1e+33, lb=0, name='xi')
 
         # Funcion objetivo
-        mdl.minimize(mdl.sum(w_var[i] * w_var[i] * w[i] for i in name_w) + mdl.sum(xi_var[i] * xi[i] for i in name_xi))
+        mdl.minimize(mdl.sum(w_var[i] * w[i] for i in name_w) + mdl.sum(xi_var[i] * xi[i] for i in name_xi))
 
         # Restricciones
-        for obs in range(0, n_obs):
-            for dim_y in range(0, n_dim_y):
-                left_side = y[obs][dim_y] - mdl.sum(w_var[dim_y, j] * self.grid.data_grid.phi[obs][dim_y][j] for j in range(0, n_var))
+        for obs in range(n_obs):
+            for out in range(n_out):
+                left_side = y[obs][out] - mdl.sum(w_var[out, var] * self.grid.data_grid.phi[obs][out][var] for var in range(n_var))
                 # (1)
                 mdl.add_constraint(
                     left_side <= 0,
-                    ctname='c1_' + str(obs) + "_" + str(dim_y)
+                    ctname='c1_' + str(obs) + "_" + str(out)
                 )
                 # (2)
                 mdl.add_constraint(
-                    -left_side <= self.eps + xi_var[dim_y, obs],
-                    ctname='c2_' + str(obs) + "_" + str(dim_y)
+                    -left_side <= self.eps + xi_var[out, obs],
+                    ctname='c2_' + str(obs) + "_" + str(out)
                 )
         self.model = mdl
 
@@ -125,7 +126,7 @@ class SSVF(SVF):
     def solve(self):
         """Solución de un modelo SVF
         """
-        n_dim_y = len(self.outputs)
+        n_out = len(self.outputs)
         self.model.solve()
         name_var = self.model.iter_variables()
         sol_w = list()
@@ -138,17 +139,35 @@ class SSVF(SVF):
             else:
                 sol_w.append(sol)
         # Numero de ws por dimension
-        n_w_dim = int(len(sol_w) / n_dim_y)
-        mat_w = [[] for _ in range(0, n_dim_y)]
+        n_w_dim = int(len(sol_w) / n_out)
+        mat_w = [[] for _ in range(0, n_out)]
         cont = 0
-        for i in range(0, n_dim_y):
+        for i in range(0, n_out):
             for j in range(0, n_w_dim):
                 mat_w[i].append(round(sol_w[cont], 6))
                 cont += 1
-        mat_xi = [[] for _ in range(0, n_dim_y)]
+        mat_xi = [[] for _ in range(0, n_out)]
         cont = 0
-        for i in range(0, n_dim_y):
+        for i in range(0, n_out):
             for j in range(0, len(self.data)):
                 mat_xi[i].append(round(sol_xi[cont], 6))
                 cont += 1
         self.solution = SVFSolution(mat_w, mat_xi)
+
+    def estimation(self, dmu):
+        """Estimacion de una DMU escogida. y=phi(dmu)*w
+
+        Args:
+            dmu (list): Observación sobre la que estimar su valor
+
+        Returns:
+            list: Devuelve una lista con la estimación de cada output
+        """
+        dmu_cell = self.grid.search_dmu(dmu)
+        phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell,"phi"].values[0]
+        prediction_list = list()
+        for i in range(0, len(self.outputs)):
+            prediction = sum([a * b for a, b in zip(self.solution.w[i], phi[i])])
+            prediction_list.append(prediction)
+        return prediction_list
+

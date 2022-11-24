@@ -41,16 +41,16 @@ class SVF_SP(SVF):
 
         # Número de variables w
         n_var = 0
-        for i in range(len(self.grid.df_grid["phi"][0])):
-            n_var += len(self.grid.df_grid["phi"][i])
-
+        for i in range(len(self.grid.data_grid["phi"][0][0])):
+            var_dim = self.grid.data_grid["phi"][0][0][i]
+            n_var += len(var_dim)
         # Variable w
-        # name_w: (i,j)-> i:es el indice de la columna de la matriz phi;j: es el índice de la dimensión de y
-        name_w = [(i, j, r) for r in range(n_out) for j in range(0, n_inp) for i in range(0, len(self.grid.knot_list[j]) + 1)]
+        name_w = [(knot, inp, out) for out in range(n_out) for inp in range(n_inp) for knot in range(len(self.grid.knot_list[inp]) + 1)]
+        print(name_w)
         w = {}
         w = w.fromkeys(name_w, 1)
         # Variable Xi
-        name_xi = [(i, j) for i in range(0, n_obs) for j in range(0, n_out)]
+        name_xi = [(obs, out) for obs in range(n_obs) for out in range(n_out)]
         xi = {}
         xi = xi.fromkeys(name_xi, self.C)
         
@@ -64,47 +64,52 @@ class SVF_SP(SVF):
     
         # Función objetivo
         mdl.minimize(mdl.sum((w_var[i] * w[i]) ** 2 for i in name_w) + mdl.sum(xi_var[i] * xi[i] for i in name_xi))
-    
+
         # Restricciones
-        for obs in range(0, n_obs):
-            for r in range(0, n_out):
-                left_side = -y[obs][r] + mdl.sum(
-                    w_var[i, j, r] * self.grid.data_grid.phi[obs][r][i] for j in range(0, n_inp) for i in range(0, len(self.grid.knot_list[j]) + 1))
+        for obs in range(n_obs):
+            for out in range(n_out):
+                left_side = -y[obs][out] + mdl.sum(
+                    w_var[knot, inp, out] * self.grid.data_grid.phi[obs][out][inp][knot] for inp in range(n_inp) for knot in range(len(self.grid.knot_list[inp]) + 1))
                 # (1)
                 mdl.add_constraint(
-                    left_side <= self.eps + xi_var[obs, r],
-                    ctname='c1_o' + str(obs + 1) + "_y" + str(r + 1)
+                    left_side <= self.eps + xi_var[obs, out],
+                    ctname='c1_o' + str(obs + 1) + "_y" + str(out + 1)
                 )
                 # (2)
                 mdl.add_constraint(
                     -left_side <= 0,
-                    ctname='c2_o' + str(obs + 1) + "_y" + str(r + 1)
+                    ctname='c2_o' + str(obs + 1) + "_y" + str(out + 1)
                 )
     
-        for r in range(n_out):
-            for j in range(n_inp):
-                for k in range(2, len(self.grid.knot_list[j]) + 2):
-                    left_side = mdl.sum(w_var[i, j, r] * 1 for i in range(1, k))
+        for out in range(n_out):
+            left_side = w_var[0, 0, out]
+            mdl.add_constraint(
+                left_side >= 0,
+                ctname='c3_x' + str(1) + '_y' + str(out + 1)
+            )
+            for inp in range(n_inp):
+                for knot in range(2, len(self.grid.knot_list[inp]) + 2):
+                    left_side = mdl.sum(w_var[i, inp, out] * 1 for i in range(1, knot))
                     # (3)
                     mdl.add_constraint(
                         left_side >= 0,
-                        ctname='c3_x' + str(j + 1) + '_y' + str(r + 1)
+                        ctname='c3_x' + str(inp + 1) + '_y' + str(out + 1)
                     )
     
-        for r in range(n_out):
-            for j in range(0, n_inp):
-                # for i in range(0, len(t[j]) + 1):
-                for i in range(1, len(self.grid.knot_list[j]) + 1):
+        for out in range(n_out):
+            for inp in range(0, n_inp):
+                # for i in range(0, len(t[inp]) + 1):
+                for knot in range(1, len(self.grid.knot_list[inp]) + 1):
                     # (4)
-                    if i <= 1:
+                    if knot <= 1:
                         mdl.add_constraint(
-                            w_var[i, j, r] >= 0,
-                            'c4_x' + str(j + 1) + "_y" + str(r + 1)
+                            w_var[knot, inp, out] >= 0,
+                            'c4_x' + str(inp + 1) + "_y" + str(out + 1)
                         )
                     else:
                         mdl.add_constraint(
-                            w_var[i, j, r] <= 0,
-                            'c4_x' + str(j + 1) + "_y" + str(r + 1)
+                            w_var[knot, inp, out] <= 0,
+                            'c4_x' + str(inp + 1) + "_y" + str(out + 1)
                         )
     
         # print(mdl.export_to_string())
@@ -165,17 +170,36 @@ class SVF_SP(SVF):
                 sol_xi.append(sol)
             else:
                 sol_w.append(sol)
+
         mat_w = [[] for _ in range(0, n_out)]
         cont = 0
         for i in range(0, n_out):
-            for j in range(0, len(self.grid.df_grid["phi"][i][0])):
+            for j in range(0, len(self.grid.data_grid["phi"][i][0])):
                 w = round(sol_w[cont],6)
                 mat_w[i].append(w)
                 cont += 1
+
         mat_xi = [[] for _ in range(0, n_out)]
         cont = 0
         for i in range(0, n_out):
             for j in range(0, len(self.data)):
                 mat_xi[i].append(round(sol_xi[cont], 6))
                 cont += 1
+
         self.solution = SVFSolution(mat_w, sol_xi)
+
+    def estimation(self, dmu):
+        """Estimacion de una DMU escogida. y=phi(x)*w
+
+        Args:
+            x (list): Observación sobre la que estimar su valor
+
+        Returns:
+            list: Devuelve una lista con la estimación de cada output
+        """
+        phi = self.grid.calculate_dmu_phi(dmu)
+        prediction_list = list()
+        for i in range(0, len(self.outputs)):
+            prediction = sum([a * b for a, b in zip(self.solution.w[i], phi[i])])
+            prediction_list.append(prediction)
+        return prediction_list
