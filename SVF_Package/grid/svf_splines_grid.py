@@ -19,7 +19,6 @@ class SVF_SPLINES_GRID(GRID):
         """
             Función que crea un grid en base a unos datos e hiperparámetro d
         """
-        self.df_grid = DataFrame(columns=["id_cell", "value", "phi"])
         x = self.data.filter(self.inputs)
         # Numero de columnas x
         n_dim = len(x.columns)
@@ -38,10 +37,7 @@ class SVF_SPLINES_GRID(GRID):
                 knot.append(knot_i)
             knot_list.append(knot)
             knot_index.append(arange(0, len(knot)))
-        self.df_grid["id_cell"] = list(product(*knot_index))
-        self.df_grid["value"] = list(product(*knot_list))
         self.knot_list = knot_list
-        self.calculate_df_grid_phi()
         self.calculate_data_grid()
 
     def calculate_dmu_phi(self, dmu):
@@ -53,7 +49,8 @@ class SVF_SPLINES_GRID(GRID):
         Returns:
             list: Vector de 1 0 con la transformación del vector en base al grid
         """
-        phi_list = []
+        phi_list = list()
+        dmu_phi = list()
         n_dim = len(dmu)
         for j in range(0, n_dim):
             phi = [1]
@@ -63,30 +60,30 @@ class SVF_SPLINES_GRID(GRID):
                 else:
                     value = 0
                 phi.append(value)
+            phi_list.append(phi)
         for i in range(len(self.outputs)):
-            phi_list.append(phi)
-        return phi_list
+            dmu_phi.append(phi_list)
+        return dmu_phi
 
-    def calculate_df_grid_phi(self):
-        """Método para añadir al dataframe grid el valor de la transformada de cada observación
-        """
-        x = self.df_grid["value"]
-        x_list = x.values.tolist()
-        phi_list = list()
-        for dmu in x_list:
-            phi = self.calculate_dmu_phi(dmu)
-            phi_list.append(phi)
-        self.df_grid["phi"] = phi_list
+    # def calculate_df_grid_phi(self):
+    #     """Método para añadir al dataframe grid el valor de la transformada de cada observación
+    #     """
+    #     x = self.df_grid["value"]
+    #     x_list = x.values.tolist()
+    #     phi_list = list()
+    #     for dmu in x_list:
+    #         phi = self.calculate_dmu_phi(dmu)
+    #         phi_list.append(phi)
+    #     self.df_grid["phi"] = phi_list
 
     def calculate_data_grid(self):
         """Método para añadir al dataframe grid el valor de la transformada de cada observación
         """
         self.data_grid = self.data.copy()
-        x = self.data_grid.filter(self.inputs)
-        x_list = x.values.tolist()
+        dmu_list = self.data_grid.filter(self.inputs)
+        dmu_values_list = dmu_list.values.tolist()
         phi_list = list()
-        for x in x_list:
-            p = self.search_dmu(x)
-            phi = self.calculate_dmu_phi(p)
+        for dmu_values in dmu_values_list:
+            phi = self.calculate_dmu_phi(dmu_values)
             phi_list.append(phi)
         self.data_grid["phi"] = phi_list

@@ -17,7 +17,6 @@ class GRID:
         self.inputs = inputs
         self.outputs = outputs
         self.d = d
-        self.df_grid = None
         self.data_grid = None
         self.knot_list = None
 
