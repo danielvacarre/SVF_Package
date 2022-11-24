@@ -36,7 +36,7 @@ class SSVF(SVF):
 
         #######################################################################
         # Crear el grid
-        self.grid = SVF_GRID(self.data, self.inputs, self.d)
+        self.grid = SVF_GRID(self.data, self.inputs, self.outputs, self.d )
         self.grid.create_grid()
 
         # Numero de variables w
@@ -67,18 +67,18 @@ class SSVF(SVF):
         mdl.minimize(mdl.sum(w_var[i] * w_var[i] * w[i] for i in name_w) + mdl.sum(xi_var[i] * xi[i] for i in name_xi))
 
         # Restricciones
-        for i in range(0, n_obs):
+        for obs in range(0, n_obs):
             for dim_y in range(0, n_dim_y):
-                left_side = y[i][dim_y] - mdl.sum(w_var[dim_y, j] * self.grid.data_grid.phi[i][j] for j in range(0, n_var))
+                left_side = y[obs][dim_y] - mdl.sum(w_var[dim_y, j] * self.grid.data_grid.phi[obs][dim_y][j] for j in range(0, n_var))
                 # (1)
                 mdl.add_constraint(
                     left_side <= 0,
-                    ctname='c1_' + str(i) + "_" + str(dim_y)
+                    ctname='c1_' + str(obs) + "_" + str(dim_y)
                 )
                 # (2)
                 mdl.add_constraint(
-                    -left_side <= self.eps + xi_var[dim_y, i],
-                    ctname='c2_' + str(i) + "_" + str(dim_y)
+                    -left_side <= self.eps + xi_var[dim_y, obs],
+                    ctname='c2_' + str(obs) + "_" + str(dim_y)
                 )
         self.model = mdl
 
@@ -145,5 +145,10 @@ class SSVF(SVF):
             for j in range(0, n_w_dim):
                 mat_w[i].append(round(sol_w[cont], 6))
                 cont += 1
-        self.solution = SVFSolution(mat_w, sol_xi)
-
+        mat_xi = [[] for _ in range(0, n_dim_y)]
+        cont = 0
+        for i in range(0, n_dim_y):
+            for j in range(0, len(self.data)):
+                mat_xi[i].append(round(sol_xi[cont], 6))
+                cont += 1
+        self.solution = SVFSolution(mat_w, mat_xi)

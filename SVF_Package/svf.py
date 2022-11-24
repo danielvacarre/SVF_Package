@@ -26,7 +26,7 @@ class SVF:
         self.solution = None
         self.name = None
 
-    def estimation(self,x):
+    def estimation(self, x):
         """Estimacion de una DMU escogida. y=phi(x)*w
 
         Args:
@@ -35,12 +35,10 @@ class SVF:
         Returns:
             list: Devuelve una lista con la estimación de cada output
         """
-        p = self.grid.search_observation(x)
-        phi = self.grid.calculate_phi_observation(p)
+        dmu_cell = self.grid.search_dmu(x)
+        phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell,"phi"].values[0]
         prediction_list = list()
-        prediction = 0
         for i in range(0, len(self.outputs)):
-            for j in range (len(self.solution.w)):
-                prediction += self.solution.w[i][j] * phi[i]
+            prediction = sum([a * b for a, b in zip(self.solution.w[i], phi[i])])
             prediction_list.append(prediction)
         return prediction_list

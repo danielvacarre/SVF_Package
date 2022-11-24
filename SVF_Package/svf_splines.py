@@ -32,11 +32,11 @@ class SVF_SP(SVF):
         n_out = len(y_df.columns)
         # Numero de observaciones del problema
         n_obs = len(y)
-        n_inp= len(self.outputs)
+        n_inp= len(self.inputs)
 
         #######################################################################
         # Crear el grid
-        self.grid = SVF_SPLINES_GRID(self.data, self.inputs, self.d)
+        self.grid = SVF_SPLINES_GRID(self.data, self.inputs, self.outputs, self.d)
         self.grid.create_grid()
 
         # Número de variables w
@@ -49,8 +49,6 @@ class SVF_SP(SVF):
         name_w = [(i, j, r) for r in range(n_out) for j in range(0, n_inp) for i in range(0, len(self.grid.knot_list[j]) + 1)]
         w = {}
         w = w.fromkeys(name_w, 1)
-        # print(w)
-        #
         # Variable Xi
         name_xi = [(i, j) for i in range(0, n_obs) for j in range(0, n_out)]
         xi = {}
@@ -71,7 +69,7 @@ class SVF_SP(SVF):
         for obs in range(0, n_obs):
             for r in range(0, n_out):
                 left_side = -y[obs][r] + mdl.sum(
-                    w_var[i, j, r] * self.grid.df_grid.phi[obs][j][i] for j in range(0, n_inp) for i in range(0, len(self.grid.knot_list[j]) + 1))
+                    w_var[i, j, r] * self.grid.data_grid.phi[obs][r][i] for j in range(0, n_inp) for i in range(0, len(self.grid.knot_list[j]) + 1))
                 # (1)
                 mdl.add_constraint(
                     left_side <= self.eps + xi_var[obs, r],
@@ -155,8 +153,7 @@ class SVF_SP(SVF):
     def solve(self):
         """Solución de un modelo SVF
         """
-        n_inp = self.inputs
-        n_out = self.outputs
+        n_out = len(self.outputs)
         self.model.solve()
         name_var = self.model.iter_variables()
         sol_w = list()
@@ -168,17 +165,17 @@ class SVF_SP(SVF):
                 sol_xi.append(sol)
             else:
                 sol_w.append(sol)
-        # Numero de ws por dimensión
-        n_w_dim = int(len(sol_w) / n_out / n_inp)
-        mat_w = []
+        mat_w = [[] for _ in range(0, n_out)]
         cont = 0
         for i in range(0, n_out):
-            mat_2 = []
-            for j in range(0, n_inp):
-                mat_3 = []
-                for r in range(n_w_dim):
-                    mat_3.append(round(sol_w[cont], 6))
-                    cont += 1
-                mat_2.append(mat_3)
-            mat_w.append(mat_2)
+            for j in range(0, len(self.grid.df_grid["phi"][i][0])):
+                w = round(sol_w[cont],6)
+                mat_w[i].append(w)
+                cont += 1
+        mat_xi = [[] for _ in range(0, n_out)]
+        cont = 0
+        for i in range(0, n_out):
+            for j in range(0, len(self.data)):
+                mat_xi[i].append(round(sol_xi[cont], 6))
+                cont += 1
         self.solution = SVFSolution(mat_w, sol_xi)

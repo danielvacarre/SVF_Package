@@ -1,12 +1,11 @@
 from numpy import transpose
 
-
 class GRID:
     """
         Clase grid sobre el que se realiza el módelo SVF. Un grid es una partición del espacio de los inputs que está divido por celdas
     """
 
-    def __init__(self, data, inputs, d):
+    def __init__(self, data, inputs, outputs, d):
         """Constructor de la clase grid
 
         Args:
@@ -16,12 +15,13 @@ class GRID:
         """
         self.data = data
         self.inputs = inputs
+        self.outputs = outputs
         self.d = d
         self.df_grid = None
         self.data_grid = None
         self.knot_list = None
 
-    def search_observation(self, dmu):
+    def search_dmu(self, dmu):
         """
             Función que devuelve la celda en la que se encuentra una observación en el grid
         Args:
@@ -29,21 +29,21 @@ class GRID:
         Returns:
             position (list): Vector con la posición de la observación en el grid
         """
-        position = list()
+        cell = list()
         r = transpose(self.knot_list)
         for l in range(0, len(self.knot_list)):
             for m in range(0, len(self.knot_list[l])):
                 trans = self.transformation(dmu[l], r[m][l])
                 if trans < 0:
-                    position.append(m - 1)
+                    cell.append(m - 1)
                     break
                 if trans == 0:
-                    position.append(m)
+                    cell.append(m)
                     break
                 if trans > 0 and m == len(self.knot_list[l]) - 1:
-                    position.append(m)
+                    cell.append(m)
                     break
-        return position
+        return tuple(cell)
 
     def transformation(self, x_i, t_k):
         """

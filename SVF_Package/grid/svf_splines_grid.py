@@ -1,13 +1,11 @@
 from itertools import product
 from numpy import arange
 from pandas import DataFrame
-
 from svf_package.grid.grid import GRID
-
 
 class SVF_SPLINES_GRID(GRID):
 
-    def __init__(self, data, inputs, d):
+    def __init__(self, data, inputs, outputs, d):
         """
             Constructor de la clase SVF_SPLINES_GRID
         Args:
@@ -15,7 +13,7 @@ class SVF_SPLINES_GRID(GRID):
             inputs (list): listado de inputs
             d (int): número de particiones en las que se divide el grid
         """
-        super().__init__(data, inputs, d)
+        super().__init__(data, inputs, outputs, d)
 
     def create_grid(self):
         """
@@ -44,8 +42,9 @@ class SVF_SPLINES_GRID(GRID):
         self.df_grid["value"] = list(product(*knot_list))
         self.knot_list = knot_list
         self.calculate_df_grid_phi()
+        self.calculate_data_grid()
 
-    def calculate_phi_observation(self, dmu):
+    def calculate_dmu_phi(self, dmu):
         """
             Función que calcula el valor de la transformación (phi) de una observación en el grid.
         Args:
@@ -59,11 +58,12 @@ class SVF_SPLINES_GRID(GRID):
         for j in range(0, n_dim):
             phi = [1]
             for i in range(0, len(self.knot_list[j])):
-                if dmu[j] >= self.knot_list[j][i]:
+                if dmu[j] > self.knot_list[j][i]:
                     value = dmu[j] - self.knot_list[j][i]
                 else:
                     value = 0
                 phi.append(value)
+        for i in range(len(self.outputs)):
             phi_list.append(phi)
         return phi_list
 
@@ -74,6 +74,19 @@ class SVF_SPLINES_GRID(GRID):
         x_list = x.values.tolist()
         phi_list = list()
         for dmu in x_list:
-            phi = self.calculate_phi_observation(dmu)
+            phi = self.calculate_dmu_phi(dmu)
             phi_list.append(phi)
         self.df_grid["phi"] = phi_list
+
+    def calculate_data_grid(self):
+        """Método para añadir al dataframe grid el valor de la transformada de cada observación
+        """
+        self.data_grid = self.data.copy()
+        x = self.data_grid.filter(self.inputs)
+        x_list = x.values.tolist()
+        phi_list = list()
+        for x in x_list:
+            p = self.search_dmu(x)
+            phi = self.calculate_dmu_phi(p)
+            phi_list.append(phi)
+        self.data_grid["phi"] = phi_list

@@ -1,16 +1,14 @@
 from itertools import product
-from numpy import arange, asarray, float32
+from numpy import arange
 from pandas import DataFrame
-
 from svf_package.grid.grid import GRID
-
 
 class SVF_GRID(GRID):
     """
         Clase generadora de un grid SVF. Sirve tanto para SVF como SSVF
     """
 
-    def __init__(self, data, inputs, d):
+    def __init__(self, data, inputs, outputs, d):
         """
             Constructor de la clase SVF_GRID
         Args:
@@ -18,7 +16,7 @@ class SVF_GRID(GRID):
             inputs (list): listado de inputs
             d (list): número de particiones en las que se divide el grid
         """
-        super().__init__(data, inputs, d)
+        super().__init__(data, inputs, outputs, d)
 
     def create_grid(self):
         """
@@ -51,26 +49,29 @@ class SVF_GRID(GRID):
         self.calculate_df_grid()
         self.calculate_data_grid()
 
-    def calculate_phi_observation(self, position):
+    def calculate_dmu_phi(self, cell):
         """
             Función que calcula el valor de la transformación (phi) de una observación en el grid.
         Args:
-            position (list): Posición de la observación en el grid
+            cell (list): Posición de la observación en el grid
 
         Returns:
             list: Vector de 1 0 con la transformación del vector en base al grid
         """
         phi = []
-        n_dim = len(position)
+        phi_list = []
+        n_dim = len(cell)
         for i in range(0, len(self.df_grid)):
             for j in range(0, n_dim):
-                if position[j] >= self.df_grid["id_cell"][i][j]:
+                if cell[j] >= self.df_grid["id_cell"][i][j]:
                     value = 1
                 else:
                     value = 0
                     break
             phi.append(value)
-        return phi
+        for i in range(len(self.outputs)):
+            phi_list.append(phi)
+        return phi_list
 
     def calculate_df_grid(self):
         """Método para añadir al dataframe grid el valor de la transformada de cada observación
@@ -80,8 +81,8 @@ class SVF_GRID(GRID):
         phi_list = list()
         c_cells = list()
         for x in x_list:
-            p = self.search_observation(x)
-            phi = self.calculate_phi_observation(p)
+            p = self.search_dmu(x)
+            phi = self.calculate_dmu_phi(p)
             phi_list.append(phi)
         for index,cell in self.df_grid.iterrows():
             c_cell = search_contiguous_cell(cell['id_cell'])
@@ -98,8 +99,8 @@ class SVF_GRID(GRID):
         phi_list = list()
         c_cells = list()
         for x in x_list:
-            p = self.search_observation(x)
-            phi = self.calculate_phi_observation(p)
+            p = self.search_dmu(x)
+            phi = self.calculate_dmu_phi(p)
             phi_list.append(phi)
             c_cell = search_contiguous_cell(p)
             c_cells.append(c_cell)
