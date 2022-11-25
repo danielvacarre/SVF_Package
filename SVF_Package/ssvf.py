@@ -41,7 +41,6 @@ class SSVF(SVF):
 
         # Numero de variables w
         n_var = len(self.grid.data_grid.phi[0][0])
-        print(n_var)
 
         #######################################################################
 
@@ -83,46 +82,6 @@ class SSVF(SVF):
                 )
         self.model = mdl
 
-    def modify_model(self, c, eps):
-        """Método que se utiliza para modificar el valor de C y las restricciones de un modelo
-        Args:
-            c (float): Valores del hiperparámetro C del modelo_
-            eps (float): Valores del hiperparámetro épsilon del modelo
-
-        Returns:
-            docplex.mp.model.Model: modelo SVF modificado
-        """
-        n_obs = len(self.data)
-        model = self.model.copy()
-        name_var = model.iter_variables()
-        name_w = list()
-        name_xi = list()
-        for var in name_var:
-            name = var.get_name()
-            if name.find("w") == -1:
-                name_xi.append(name)
-            else:
-                name_w.append(name)
-        # Variable w
-        w = {}
-        w = w.fromkeys(name_w, 1)
-
-        # Variable Xi
-        xi = {}
-        xi = xi.fromkeys(name_xi, c)
-
-        a = [model.get_var_by_name(i) * model.get_var_by_name(i) * w[i] for i in name_w]
-        b = [model.get_var_by_name(i) * xi[i] for i in name_xi]
-        # Funcion objetivo
-        model.minimize(model.sum(a) + model.sum(b))
-        # Modificar restricciones
-        for i in range(0, n_obs):
-            for r in range(len(self.outputs)):
-                const_name = 'c2_' + str(i) + "_" + str(r)
-                rest = model.get_constraint_by_name(const_name)
-                rest.rhs += eps
-        return model
-
     def solve(self):
         """Solución de un modelo SVF
         """
@@ -140,17 +99,17 @@ class SSVF(SVF):
                 sol_w.append(sol)
         # Numero de ws por dimension
         n_w_dim = int(len(sol_w) / n_out)
-        mat_w = [[] for _ in range(0, n_out)]
+        mat_w = [[] for _ in range(n_out)]
         cont = 0
-        for i in range(0, n_out):
+        for out in range(n_out):
             for j in range(0, n_w_dim):
-                mat_w[i].append(round(sol_w[cont], 6))
+                mat_w[out].append(round(sol_w[cont], 6))
                 cont += 1
-        mat_xi = [[] for _ in range(0, n_out)]
+        mat_xi = [[] for _ in range(n_out)]
         cont = 0
-        for i in range(0, n_out):
+        for out in range(n_out):
             for j in range(0, len(self.data)):
-                mat_xi[i].append(round(sol_xi[cont], 6))
+                mat_xi[out].append(round(sol_xi[cont], 6))
                 cont += 1
         self.solution = SVFSolution(mat_w, mat_xi)
 
@@ -166,8 +125,8 @@ class SSVF(SVF):
         dmu_cell = self.grid.search_dmu(dmu)
         phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell,"phi"].values[0]
         prediction_list = list()
-        for i in range(0, len(self.outputs)):
-            prediction = sum([a * b for a, b in zip(self.solution.w[i], phi[i])])
+        for out in range(0, len(self.outputs)):
+            prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]),3)
             prediction_list.append(prediction)
         return prediction_list
 

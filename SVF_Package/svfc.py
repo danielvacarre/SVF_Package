@@ -33,22 +33,22 @@ class SVFC(SVF):
         n_obs = len(y)
 
         # Crear el grid
-        self.grid = SVF_GRID(self.data, self.inputs, self.d)
+        self.grid = SVF_GRID(self.data, self.inputs, self.outputs, self.d)
         self.grid.create_grid()
 
         # Numero de variables w
-        n_var = len(self.grid.data_grid.phi[0])
+        n_var = len(self.grid.data_grid.phi[0][0])
 
         # Variable u
-        name_u = [(i, j) for i in range(n_out) for j in range(n_var)]
+        name_u = [(out, var) for out in range(n_out) for var in range(n_var)]
         u = {}
         u = u.fromkeys(name_u, 1)
         # Variable u
-        name_v = [(i, j) for i in range(n_out) for j in range(n_var)]
+        name_v = [(out, var) for out in range(n_out) for var in range(n_var)]
         v = {}
         v = v.fromkeys(name_v, 1)
         # Variable Xi
-        name_xi = [(i, j) for i in range(n_out) for j in range(0, n_obs)]
+        name_xi = [(out, var) for out in range(n_out) for var in range(n_obs)]
         xi = {}
         xi = xi.fromkeys(name_xi, self.C)
         mdl = Model("SVF C:" + str(self.C) + ", eps:" + str(self.eps) + ", d:" + str(self.d))
@@ -65,47 +65,47 @@ class SVFC(SVF):
                      mdl.sum(v_var[i] * v[i] for i in name_v) +
                      mdl.sum(xi_var[i] * xi[i] for i in name_xi))
         # Restricciones
-        for i in range(n_obs):
-            for dim_y in range(n_out):
-                left_side = y[i][dim_y] - \
+        for obs in range(n_obs):
+            for out in range(n_out):
+                left_side = y[obs][out] - \
                             mdl.sum(
-                                u_var[dim_y, j] * self.grid.data_grid.phi[i][j] -
-                                v_var[dim_y, j] * self.grid.data_grid.phi[i][j] for j in range(n_var)
+                                u_var[out, var] * self.grid.data_grid.phi[obs][out][var] -
+                                v_var[out, var] * self.grid.data_grid.phi[obs][out][var] for var in range(n_var)
                             )
                 # (1)
                 mdl.add_constraint(
                     left_side <= 0,
-                    ctname='c1_' + str(i) + "_" + str(dim_y)
+                    ctname='c1_' + str(obs) + "_" + str(out)
                 )
                 # (2)
                 mdl.add_constraint(
-                    -left_side <= self.eps + xi_var[dim_y, i],
-                    ctname='c2_' + str(i) + "_" + str(dim_y)
+                    -left_side <= self.eps + xi_var[out, obs],
+                    ctname='c2_' + str(obs) + "_" + str(out)
                 )
         # (3)
-        for dim_y in range(n_out):
+        for out in range(n_out):
             lhs = mdl.sum(
-                u_var[dim_y, j] * self.grid.df_grid.phi[0][j] - v_var[dim_y, j] * self.grid.df_grid.phi[0][j] for j in
+                u_var[out, var] * self.grid.df_grid.phi[0][out][var] - v_var[out, var] * self.grid.df_grid.phi[0][out][var] for var in
                 range(n_var)
             )
             mdl.add_constraint(
                 lhs >= 0,
-                ctname='c3_' + str(self.grid.df_grid.id_cell[0]) + "_" + str(dim_y)
+                ctname='c3_' + str(self.grid.df_grid.id_cell[0]) + "_" + str(out)
             )
         for index, cell in self.grid.df_grid.iterrows():
-            left_side = cell["phi"]
+            left_side = cell["phi"][0]
             c_cont = cell["c_cells"]
             for c_cell in c_cont:
                 c_cont_row = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == c_cell]
-                right_side = c_cont_row["phi"].values[0]
+                right_side = c_cont_row["phi"].values[0][0]
                 constraint = asarray(left_side, dtype=float32) - asarray(right_side, dtype=float32)
-                for dim_y in range(n_out):
+                for out in range(n_out):
                     lhs = mdl.sum(
-                        u_var[dim_y, j] * constraint[j] - v_var[dim_y, j] * constraint[j] for j in range(n_var)
+                        u_var[out, var] * constraint[var] - v_var[out, var] * constraint[var] for var in range(n_var)
                     )
                     mdl.add_constraint(
                         lhs >= 0,
-                        ctname='c3_' + str(cell["id_cell"]) + "_" + str(dim_y)
+                        ctname='c3_' + str(cell["id_cell"]) + "_" + str(out)
                     )
 
         self.model = mdl
@@ -130,18 +130,36 @@ class SVFC(SVF):
                 sol_xi.append(sol)
         # Numero de ws por dimension
         n_w_dim = int(len(sol_u) / n_out)
-        mat_w = [[] for _ in range(0, n_out)]
+        mat_w = [[] for _ in range(n_out)]
         cont = 0
-        for i in range(0, n_out):
-            for j in range(0, n_w_dim):
+        for out in range(n_out):
+            for w_dim in range(n_w_dim):
                 w = sol_u[cont] - sol_v[cont]
-                mat_w[i].append(w)
+                mat_w[out].append(w)
                 cont += 1
-        mat_xi = [[] for _ in range(0, n_out)]
+        mat_xi = [[] for _ in range(n_out)]
         cont = 0
-        for i in range(0, n_out):
-            for j in range(0, len(self.data)):
-                mat_xi[i].append(round(sol_xi[cont], 6))
+        for out in range(n_out):
+            for obs in range(len(self.data)):
+                mat_xi[out].append(round(sol_xi[cont], 6))
                 cont += 1
         self.solution = SVFSolution(mat_w, mat_xi)
+
+    def estimation(self, dmu):
+        """Estimacion de una DMU escogida. y=phi(dmu)*w
+
+        Args:
+            dmu (list): Observación sobre la que estimar su valor
+
+        Returns:
+            list: Devuelve una lista con la estimación de cada output
+        """
+        dmu_cell = self.grid.search_dmu(dmu)
+        phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell,"phi"].values[0]
+        prediction_list = list()
+        for out in range(len(self.outputs)):
+            prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]),3)
+            prediction_list.append(prediction)
+        return prediction_list
+
 

@@ -46,7 +46,7 @@ class SVF_SP(SVF):
             n_var += len(var_dim)
         # Variable w
         name_w = [(knot, inp, out) for out in range(n_out) for inp in range(n_inp) for knot in range(len(self.grid.knot_list[inp]) + 1)]
-        print(name_w)
+
         w = {}
         w = w.fromkeys(name_w, 1)
         # Variable Xi
@@ -82,14 +82,14 @@ class SVF_SP(SVF):
                 )
     
         for out in range(n_out):
-            left_side = w_var[0, 0, out]
-            mdl.add_constraint(
-                left_side >= 0,
-                ctname='c3_x' + str(1) + '_y' + str(out + 1)
-            )
+        #     left_side = w_var[0, 0, 0]
+        #     mdl.add_constraint(
+        #         left_side >= 0,
+        #         ctname='c3_x' + str(1) + '_y' + str(out + 1)
+        #     )
             for inp in range(n_inp):
                 for knot in range(2, len(self.grid.knot_list[inp]) + 2):
-                    left_side = mdl.sum(w_var[i, inp, out] * 1 for i in range(1, knot))
+                    left_side = mdl.sum(w_var[knot, inp, out] * 1 for knot in range(1, knot))
                     # (3)
                     mdl.add_constraint(
                         left_side >= 0,
@@ -97,8 +97,8 @@ class SVF_SP(SVF):
                     )
     
         for out in range(n_out):
-            for inp in range(0, n_inp):
-                # for i in range(0, len(t[inp]) + 1):
+            for inp in range(n_inp):
+                # for i in range(len(t[inp]) + 1):
                 for knot in range(1, len(self.grid.knot_list[inp]) + 1):
                     # (4)
                     if knot <= 1:
@@ -148,9 +148,9 @@ class SVF_SP(SVF):
         # Función objetivo
         model.minimize(model.sum(a) + model.sum(b))
         # Modificar restricciones
-        for j in range(0, n_out):
-            for i in range(0, n_dmu):
-                const_name = 'c1_o' + str(i + 1) + "_y" + str(j + 1)
+        for out in range(n_out):
+            for dmu in range(n_dmu):
+                const_name = 'c1_o' + str(dmu + 1) + "_y" + str(out + 1)
                 rest = model.get_constraint_by_name(const_name)
                 rest.rhs += eps
         return model
@@ -170,19 +170,18 @@ class SVF_SP(SVF):
                 sol_xi.append(sol)
             else:
                 sol_w.append(sol)
-
-        mat_w = [[] for _ in range(0, n_out)]
+        mat_w = [[] for _ in range(n_out)]
         cont = 0
-        for i in range(0, n_out):
-            for j in range(0, len(self.grid.data_grid["phi"][i][0])):
+        for i in range(n_out):
+            for j in range(len(self.grid.data_grid["phi"][i][0][0])):
                 w = round(sol_w[cont],6)
                 mat_w[i].append(w)
                 cont += 1
 
-        mat_xi = [[] for _ in range(0, n_out)]
+        mat_xi = [[] for _ in range(n_out)]
         cont = 0
-        for i in range(0, n_out):
-            for j in range(0, len(self.data)):
+        for i in range(n_out):
+            for j in range(len(self.data)):
                 mat_xi[i].append(round(sol_xi[cont], 6))
                 cont += 1
 
@@ -199,7 +198,8 @@ class SVF_SP(SVF):
         """
         phi = self.grid.calculate_dmu_phi(dmu)
         prediction_list = list()
-        for i in range(0, len(self.outputs)):
-            prediction = sum([a * b for a, b in zip(self.solution.w[i], phi[i])])
+        for out in range(len(self.outputs)):
+            # print(self.solution.w[out], phi[out])
+            prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out][0])]),3)
             prediction_list.append(prediction)
         return prediction_list
