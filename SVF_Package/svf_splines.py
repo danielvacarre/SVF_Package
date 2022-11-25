@@ -112,8 +112,8 @@ class SVF_SP(SVF):
                             'c4_x' + str(inp + 1) + "_y" + str(out + 1)
                         )
     
-        # print(mdl.export_to_string())
         self.model = mdl
+        return mdl
 
     def modify_model(self, c, eps):
         """Método que se utiliza para modificar el valor de C y las restricciones de un modelo
@@ -187,7 +187,7 @@ class SVF_SP(SVF):
 
         self.solution = SVFSolution(mat_w, sol_xi)
 
-    def estimation(self, dmu):
+    def get_estimation(self, dmu):
         """Estimacion de una DMU escogida. y=phi(x)*w
 
         Args:
@@ -202,4 +202,5 @@ class SVF_SP(SVF):
             # print(self.solution.w[out], phi[out])
             prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out][0])]),3)
             prediction_list.append(prediction)
-        return prediction_list
+        self.estimation = prediction_list
+        return self.estimation

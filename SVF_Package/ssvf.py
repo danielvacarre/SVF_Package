@@ -81,6 +81,7 @@ class SSVF(SVF):
                     ctname='c2_' + str(obs) + "_" + str(out)
                 )
         self.model = mdl
+        return mdl
 
     def solve(self):
         """Solución de un modelo SVF
@@ -112,21 +113,4 @@ class SSVF(SVF):
                 mat_xi[out].append(round(sol_xi[cont], 6))
                 cont += 1
         self.solution = SVFSolution(mat_w, mat_xi)
-
-    def estimation(self, dmu):
-        """Estimacion de una DMU escogida. y=phi(dmu)*w
-
-        Args:
-            dmu (list): Observación sobre la que estimar su valor
-
-        Returns:
-            list: Devuelve una lista con la estimación de cada output
-        """
-        dmu_cell = self.grid.search_dmu(dmu)
-        phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell,"phi"].values[0]
-        prediction_list = list()
-        for out in range(0, len(self.outputs)):
-            prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]),3)
-            prediction_list.append(prediction)
-        return prediction_list
 

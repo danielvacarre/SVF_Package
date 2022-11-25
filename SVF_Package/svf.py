@@ -64,3 +64,22 @@ class SVF:
                 rest = model.get_constraint_by_name(const_name)
                 rest.rhs += eps
         return model
+
+    def estimation(self, dmu):
+        """Estimacion de una DMU escogida. y=phi(dmu)*w
+
+        Args:
+            dmu (list): Observación sobre la que estimar su valor
+
+        Returns:
+            list: Devuelve una lista con la estimación de cada output
+        """
+        dmu_cell = self.grid.search_dmu(dmu)
+        phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell,"phi"].values[0]
+        prediction_list = list()
+        for out in range(len(self.outputs)):
+            prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]),3)
+            prediction_list.append(prediction)
+        return prediction_list
+
+

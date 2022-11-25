@@ -1,6 +1,4 @@
-from itertools import product
 from numpy import arange
-from pandas import DataFrame
 from svf_package.grid.grid import GRID
 
 class SVF_SPLINES_GRID(GRID):
@@ -52,9 +50,9 @@ class SVF_SPLINES_GRID(GRID):
         phi_list = list()
         dmu_phi = list()
         n_dim = len(dmu)
-        for j in range(0, n_dim):
+        for j in range(n_dim):
             phi = [1]
-            for i in range(0, len(self.knot_list[j])):
+            for i in range(len(self.knot_list[j])):
                 if dmu[j] > self.knot_list[j][i]:
                     value = dmu[j] - self.knot_list[j][i]
                 else:
@@ -64,17 +62,6 @@ class SVF_SPLINES_GRID(GRID):
         for i in range(len(self.outputs)):
             dmu_phi.append(phi_list)
         return dmu_phi
-
-    # def calculate_df_grid_phi(self):
-    #     """Método para añadir al dataframe grid el valor de la transformada de cada observación
-    #     """
-    #     x = self.df_grid["value"]
-    #     x_list = x.values.tolist()
-    #     phi_list = list()
-    #     for dmu in x_list:
-    #         phi = self.calculate_dmu_phi(dmu)
-    #         phi_list.append(phi)
-    #     self.df_grid["phi"] = phi_list
 
     def calculate_data_grid(self):
         """Método para añadir al dataframe grid el valor de la transformada de cada observación

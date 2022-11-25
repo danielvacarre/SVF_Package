@@ -17,3 +17,4 @@ class FOLD:
         self.data_train = data_train
         self.data_test = data_test
         self.num = num
+        self.models = None
