@@ -3,26 +3,27 @@ from numpy import arange
 from pandas import DataFrame
 from svf_package.grid.grid import GRID
 
-class SVF_GRID(GRID):
+
+class SVFGrid(GRID):
     """
         Clase generadora de un grid SVF. Sirve tanto para SVF como SSVF
     """
 
     def __init__(self, data, inputs, outputs, d):
         """
-            Constructor de la clase SVF_GRID
+            Constructor de la clase SVFGrid
         Args:
             data (pandas.DataFrame): conjunto de datos sobre los que se construye el grid
             inputs (list): listado de inputs
             d (list): número de particiones en las que se divide el grid
         """
         super().__init__(data, inputs, outputs, d)
+        self.df_grid = None
 
     def create_grid(self):
         """
             Función que crea un grid en base a unos datos e hiperparámetro d
         """
-
         self.df_grid = DataFrame(columns=["id_cell", "value", "phi"])
         x = self.data.filter(self.inputs)
         # Numero de columnas x
@@ -61,6 +62,7 @@ class SVF_GRID(GRID):
         phi = []
         phi_list = []
         n_dim = len(cell)
+        value = 0
         for i in range(0, len(self.df_grid)):
             for j in range(0, n_dim):
                 if cell[j] >= self.df_grid["id_cell"][i][j]:
@@ -84,7 +86,7 @@ class SVF_GRID(GRID):
             p = self.search_dmu(x)
             phi = self.calculate_dmu_phi(p)
             phi_list.append(phi)
-        for index,cell in self.df_grid.iterrows():
+        for index, cell in self.df_grid.iterrows():
             c_cell = search_contiguous_cell(cell['id_cell'])
             c_cells.append(c_cell)
         self.df_grid["phi"] = phi_list
@@ -107,6 +109,7 @@ class SVF_GRID(GRID):
         self.data_grid["phi"] = phi_list
         self.data_grid["c_cells"] = c_cells
 
+
 def search_contiguous_cell(cell):
     con_c_list = list()
     cell = list(cell)
@@ -117,5 +120,3 @@ def search_contiguous_cell(cell):
             con_cell[dim] = value
             con_c_list.append(tuple(con_cell))
     return con_c_list
-
-

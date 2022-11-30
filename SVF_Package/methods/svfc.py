@@ -1,8 +1,9 @@
 from docplex.mp.model import Model
 from numpy import asarray, float32
-from svf_package.grid.svf_grid import SVF_GRID
-from svf_package.svf import SVF
-from svf_package.svf_solution import SVFSolution
+from svf_package.grid.svfgrid import SVFGrid
+from svf_package.methods.svf import SVF
+from svf_package.solution.svf_solution import SVFPrimalSolution
+
 
 class SVFC(SVF):
     """Clase del modelo SVF Splines
@@ -33,9 +34,8 @@ class SVFC(SVF):
         n_obs = len(y)
 
         # Crear el grid
-        self.grid = SVF_GRID(self.data, self.inputs, self.outputs, self.d)
+        self.grid = SVFGrid(self.data, self.inputs, self.outputs, self.d)
         self.grid.create_grid()
-
         # Numero de variables w
         n_var = len(self.grid.data_grid.phi[0][0])
 
@@ -85,7 +85,8 @@ class SVFC(SVF):
         # (3)
         for out in range(n_out):
             lhs = mdl.sum(
-                u_var[out, var] * self.grid.df_grid.phi[0][out][var] - v_var[out, var] * self.grid.df_grid.phi[0][out][var] for var in
+                u_var[out, var] * self.grid.df_grid.phi[0][out][var] - v_var[out, var] * self.grid.df_grid.phi[0][out][
+                    var] for var in
                 range(n_var)
             )
             mdl.add_constraint(
@@ -108,7 +109,8 @@ class SVFC(SVF):
                         ctname='c3_' + str(cell["id_cell"]) + "_" + str(out)
                     )
         self.model = mdl
-        return mdl
+        if self.model_d is None:
+            self.model_d = mdl
 
     def solve(self):
         """Solución de un modelo SVF
@@ -143,6 +145,4 @@ class SVFC(SVF):
             for obs in range(len(self.data)):
                 mat_xi[out].append(round(sol_xi[cont], 6))
                 cont += 1
-        self.solution = SVFSolution(mat_w, mat_xi)
-
-
+        self.solution = SVFPrimalSolution(mat_w, mat_xi)

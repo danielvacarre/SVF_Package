@@ -1,7 +1,7 @@
 from docplex.mp.model import Model
-from svf_package.grid.svf_grid import SVF_GRID
-from svf_package.svf import SVF
-from svf_package.svf_solution import SVFSolution
+from svf_package.grid.svfgrid import SVFGrid
+from svf_package.methods.svf import SVF
+from svf_package.solution.svf_solution import SVFPrimalSolution
 
 
 class SSVF(SVF):
@@ -36,7 +36,7 @@ class SSVF(SVF):
 
         #######################################################################
         # Crear el grid
-        self.grid = SVF_GRID(self.data, self.inputs, self.outputs, self.d)
+        self.grid = SVFGrid(self.data, self.inputs, self.outputs, self.d)
         self.grid.create_grid()
 
         # Numero de variables w
@@ -69,7 +69,8 @@ class SSVF(SVF):
         # Restricciones
         for obs in range(n_obs):
             for out in range(n_out):
-                left_side = y[obs][out] - mdl.sum(w_var[out, var] * self.grid.data_grid.phi[obs][out][var] for var in range(n_var))
+                left_side = y[obs][out] - mdl.sum(w_var[out, var] * self.grid.data_grid.phi[obs][out][var]
+                                                  for var in range(n_var))
                 # (1)
                 mdl.add_constraint(
                     left_side <= 0,
@@ -81,11 +82,13 @@ class SSVF(SVF):
                     ctname='c2_' + str(obs) + "_" + str(out)
                 )
         self.model = mdl
-        return mdl
+        if self.model_d is None:
+            self.model_d = mdl
 
     def solve(self):
         """Solución de un modelo SVF
         """
+
         n_out = len(self.outputs)
         self.model.solve()
         name_var = self.model.iter_variables()
@@ -112,5 +115,4 @@ class SSVF(SVF):
             for j in range(0, len(self.data)):
                 mat_xi[out].append(round(sol_xi[cont], 6))
                 cont += 1
-        self.solution = SVFSolution(mat_w, mat_xi)
-
+        self.solution = SVFPrimalSolution(mat_w, mat_xi)

@@ -35,8 +35,10 @@ class SVF:
         Returns:
             docplex.mp.model.Model: modelo SVF modificado
         """
+
         n_obs = len(self.data)
-        model = self.model.copy()
+        model = self.model_d.copy()
+        model.name = "SVF,C:" + str(c) + ",eps:" + str(eps) + ",d:" + str(self.d)
         name_var = model.iter_variables()
         name_w = list()
         name_xi = list()
@@ -65,7 +67,7 @@ class SVF:
                 rest.rhs += eps
         return model
 
-    def estimation(self, dmu):
+    def get_estimation(self, dmu):
         """Estimacion de una DMU escogida. y=phi(dmu)*w
 
         Args:
@@ -74,12 +76,12 @@ class SVF:
         Returns:
             list: Devuelve una lista con la estimación de cada output
         """
+        if len(dmu) != len(self.inputs):
+            raise RuntimeError("El número de inputs de la DMU no coincide con el número de inputs del problema.")
         dmu_cell = self.grid.search_dmu(dmu)
-        phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell,"phi"].values[0]
+        phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell, "phi"].values[0]
         prediction_list = list()
         for out in range(len(self.outputs)):
-            prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]),3)
+            prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]), 3)
             prediction_list.append(prediction)
         return prediction_list
-
-

@@ -2,8 +2,7 @@ from pandas import DataFrame
 from sklearn.model_selection import KFold, train_test_split
 
 from svf_package.cv.fold import FOLD
-from svf_package.svf import SVF
-from svf_package.svf_functions import calculate_mse, set_SVF_method
+from svf_package.svf_functions import calculate_mse, create_SVF
 
 
 class CrossValidation(object):
@@ -64,32 +63,34 @@ class CrossValidation(object):
         kf = KFold(n_splits=self.n_folds, shuffle=True, random_state=self.seed)
         fold_num = 0
         list_fold = list()
-        svf_obj = set_SVF_method(self.method, self.inputs, self.outputs, self.data, self.c, self.eps, self.d)
         for train_index, test_index in kf.split(self.data):
             fold_num += 1
             data_train, data_test = self.data.iloc[train_index], self.data.iloc[test_index]
             fold = FOLD(data_train, data_test, fold_num)
-            list_fold.append(fold)
+            models = list()
             for d in self.D:
-                svf_obj.model_d = svf_obj.train()
-                svf_obj.grid = svf_obj.model_d.grid
+                svf_obj = create_SVF(self.method, self.inputs, self.outputs, self.data, 1, 0, d)
+                svf_obj.train()
                 for c in self.C:
                     for e in self.eps:
                         if self.verbose:
                             print("     FOLD:", fold_num, "C:", c, "EPS:", e, "D:", d)
-                        svf_obj.model = svf_obj.modify_model(svf_obj.model_d, c, e)
-                        svf_obj.model.solve()
-                    error = self.calculate_cv_mse(fold.data_test, svf_obj)
-                    self.results_by_fold = self.results_by_fold.append(
-                        {
-                            "Num": fold_num,
-                            "C": c,
-                            "eps": e,
-                            "d": d,
-                            "error": error,
-                        },
-                        ignore_index=True,
-                    )
+                        svf_obj.model = svf_obj.modify_model(c, e)
+                        svf_obj.solve()
+                        error = calculate_mse(svf_obj, fold.data_test)
+                        self.results_by_fold = self.results_by_fold.append(
+                            {
+                                "Num": fold_num,
+                                "C": c,
+                                "eps": e,
+                                "d": d,
+                                "error": error,
+                            },
+                            ignore_index=True,
+                        )
+                        models.append(svf_obj.model)
+            fold.models = models
+            list_fold.append(fold)
         self.folds = list_fold
         self.results = self.results_by_fold.groupby(['C', 'eps', 'd']).sum() / self.n_folds
         self.results = self.results.sort_index(ascending=False)
@@ -107,28 +108,27 @@ class CrossValidation(object):
         fold = FOLD(data_train, data_test, "TRAIN-TEST")
         fold.models = list()
         list_fold.append(fold)
-        svf_obj = set_SVF_method(self.method, self.inputs, self.outputs, self.data, self.C[0], self.eps[0], self.D[0])
         for d in self.D:
-            svf_obj.model_d = svf_obj.train()
-            # svf_obj.grid = svf_obj.model_d.grid
+            svf_obj = create_SVF(self.method, self.inputs, self.outputs, self.data, 1, 0, d)
+            svf_obj.train()
             for c in self.C:
                 for e in self.eps:
                     if self.verbose:
                         print("     FOLD:", "TRAIN-TEST", "C:", c, "EPS:", e, "D:", d)
                     svf_obj.model = svf_obj.modify_model(c, e)
                     svf_obj.solve()
-                    fold.models.append(svf_obj)
-                error = calculate_mse(svf_obj, data_test)
-                self.results_by_fold = self.results_by_fold.append(
-                    {
-                        "Num": "TRAIN-TEST",
-                        "C": c,
-                        "eps": e,
-                        "d": d,
-                        "error": error,
-                    },
-                    ignore_index=True,
-                )
+                    fold.models.append(svf_obj.model)
+                    error = calculate_mse(svf_obj, fold.data_test)
+                    self.results_by_fold = self.results_by_fold.append(
+                        {
+                            "Num": "TRAIN-TEST",
+                            "C": c,
+                            "eps": e,
+                            "d": d,
+                            "error": error,
+                        },
+                        ignore_index=True,
+                     )
         self.folds = list_fold
         self.results = self.results_by_fold.sort_index(ascending=False)
         self.results = self.results.drop(['Num'], axis=1)
@@ -137,5 +137,3 @@ class CrossValidation(object):
         self.best_C = min_error.C
         self.best_eps = min_error.eps
         self.best_d = min_error.d
-
-

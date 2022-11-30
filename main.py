@@ -1,31 +1,23 @@
 from pandas import read_csv
 
-from svf_package.grid.svf_grid import SVF_GRID
-from svf_package.grid.svf_splines_grid import SVF_SPLINES_GRID
-from svf_package.svf_functions import train
+from svf_package.cv.cv import CrossValidation
 
 if __name__ == '__main__':
-    ruta_datos = "./data/datos.csv"
-    inputs = ["x1"]
-    outputs = ["y1"]
-    method = "SVF-SP"
+    ruta_datos = "./data/2_3_30.csv"
+    inputs = ["x1","x2","x3"]
+    outputs = ["y"]
+    method = "SVF"
 
-    C = [1, 2, 5, 10, 100]
-    eps = [0, 1]
-    d = [2, 4, 6]
-    "./data/datos.csv"
+    C = [1e-3,1e-2,1e-1,1,10,100,1000]
+    eps = [0, 1e-3, 1e-2, 1e-1, 1]
+    d = [3,6,9,12]
+
     data_simulation = read_csv(ruta_datos, sep=";")
 
-    # cross_validation = CrossValidation(method, inputs, outputs, data_simulation, C, eps, d, n_folds=2)
-    # cross_validation.cv()
-
-    svfc = train("SVF", inputs, outputs, data_simulation, 1, 0, 2)
-    svfc.solve()
-    prediction_svfc = svfc.estimation([1])
-    ssvf = train("SSVF", inputs, outputs, data_simulation, 1, 0, 2)
-    ssvf.solve()
-    prediction_ssvf = ssvf.estimation([1])
-    svf_sp = train("SVF-SP", inputs, outputs, data_simulation, 1, 0, 2)
-    svf_sp.solve()
-    prediction_svf_sp = svf_sp.estimation([1])
-
+    method_list = ["SVF-SP","SVF","SSVF"]
+    cross_list = list()
+    for method in method_list:
+        print(method)
+        cross_validation = CrossValidation(method, inputs, outputs, data_simulation, C, eps, d, verbose=True)
+        cross_validation.cv()
+        cross_list.append(cross_validation)

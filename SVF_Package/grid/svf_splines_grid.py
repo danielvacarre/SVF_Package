@@ -1,11 +1,12 @@
 from numpy import arange
 from svf_package.grid.grid import GRID
 
-class SVF_SPLINES_GRID(GRID):
+
+class SVFSplinesGrid(GRID):
 
     def __init__(self, data, inputs, outputs, d):
         """
-            Constructor de la clase SVF_SPLINES_GRID
+            Constructor de la clase SVFSplinesGrid
         Args:
             data (pandas.DataFrame): conjunto de datos sobre los que se construye el grid
             inputs (list): listado de inputs

@@ -1,5 +1,6 @@
 from numpy import transpose
 
+
 class GRID:
     """
         Clase grid sobre el que se realiza el módelo SVF. Un grid es una partición del espacio de los inputs que está divido por celdas
@@ -11,6 +12,7 @@ class GRID:
         Args:
             data (pandas.DataFrame): conjunto de datos sobre los que se construye el grid
             inputs (list): listado de inputs
+            outputs (list): listado de outputs
             d (list): número de particiones en las que se divide el grid
         """
         self.data = data
@@ -32,7 +34,7 @@ class GRID:
         r = transpose(self.knot_list)
         for l in range(0, len(self.knot_list)):
             for m in range(0, len(self.knot_list[l])):
-                trans = self.transformation(dmu[l], r[m][l])
+                trans = transformation(dmu[l], r[m][l])
                 if trans < 0:
                     cell.append(m - 1)
                     break
@@ -44,24 +46,25 @@ class GRID:
                     break
         return tuple(cell)
 
-    def transformation(self, x_i, t_k):
-        """
-        Funcion que evalua si el valor de una observación es mayor o menor al de un nodo del grid.
-        Si es mayor devuelve 1, si es igual devuelve 0 y si es menor devuelve -1.
 
-        Args:
-            x_i (float) : Valor de la celda a evaluar
+def transformation(x_i, t_k):
+    """
+    Funcion que evalua si el valor de una observación es mayor o menor al de un nodo del grid.
+    Si es mayor devuelve 1, si es igual devuelve 0 y si es menor devuelve -1.
 
-            t_k (float) : Valor del nodo con el que se quiere comparar
+    Args:
+        x_i (float) : Valor de la celda a evaluar
 
-        Returns:
-            res (int): Resultado de la transformacion
-        """
+        t_k (float) : Valor del nodo con el que se quiere comparar
 
-        z = x_i - t_k
-        if z < 0:
-            return -1
-        elif z == 0:
-            return 0
-        else:
-            return 1
+    Returns:
+        res (int): Resultado de la transformacion
+    """
+
+    z = x_i - t_k
+    if z < 0:
+        return -1
+    elif z == 0:
+        return 0
+    else:
+        return 1

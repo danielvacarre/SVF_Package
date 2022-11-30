@@ -1,4 +1,4 @@
-class SVFSolution:
+class SVFPrimalSolution:
     """Clase solución de SVF
     """
     def __init__(self, w, xi):
