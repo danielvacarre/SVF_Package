@@ -1,8 +1,7 @@
 from docplex.mp.model import Model
 from svf_package.efficiency.efficiency_method import EfficiencyMethod
 
-
-class DEA(EfficiencyMethod):
+class FDH(EfficiencyMethod):
     def __init__(self, inputs, outputs, data, methods, df_estimation=None):
         super().__init__(inputs, outputs, data, methods, df_estimation)
 
@@ -28,7 +27,7 @@ class DEA(EfficiencyMethod):
             # Variable theta
             theta = mdl.continuous_var(name="theta", ub=1e33, lb=0)
             # Variable landa
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.minimize(theta)
             # Restricciones
@@ -71,7 +70,7 @@ class DEA(EfficiencyMethod):
             # Variable phi
             phi = mdl.continuous_var(name="phi", ub=1e33, lb=0)
             # Variable landa
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.maximize(phi)
             # Restricciones
@@ -114,7 +113,7 @@ class DEA(EfficiencyMethod):
             # Variable beta
             beta = mdl.continuous_var(name="beta", ub=1e33, lb=0)
             # Variable landa
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.maximize(beta)
             # Restricciones
@@ -163,7 +162,7 @@ class DEA(EfficiencyMethod):
             s_pos_var = mdl.continuous_var_dict(name_s_pos, ub=1e+33, lb=0, name='s_pos')
             # Variable landa
             name_landa = range(0, n_obs)
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.maximize(mdl.sum(s_neg_var[j] * w_inp[j] for j in range(n_dim_x)) +
                          mdl.sum(s_pos_var[r] * w_out[r] for r in range(n_dim_y)))
@@ -211,7 +210,7 @@ class DEA(EfficiencyMethod):
             theta_var = mdl.continuous_var_dict(name_theta, name="theta", ub=1, lb=0)
             # Variable landa
             name_landa = range(0, n_obs)
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa")
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.minimize(mdl.sum(theta_var[j] for j in range(n_dim_x)) / n_dim_x)
             # Restricciones
@@ -254,7 +253,7 @@ class DEA(EfficiencyMethod):
             phi_var = mdl.continuous_var_dict(name_phi, name="phi", ub=1e33, lb=1)
             # Variable landa
             name_landa = range(0, n_obs)
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.maximize(mdl.sum(phi_var[r] for r in range(n_dim_y)) / n_dim_y)
             # Restricciones
@@ -308,7 +307,7 @@ class DEA(EfficiencyMethod):
 
             # Variable landa
             name_landa = range(0, n_obs)
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa")
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
 
             # Función objetivo
             summa = mdl.sum(t_neg_var[j]/x[obs][j] for j in range(n_dim_x))
@@ -351,4 +350,3 @@ class DEA(EfficiencyMethod):
             # print(mdl.export_to_string())
             list_eff.append(eff)
         return list_eff
-

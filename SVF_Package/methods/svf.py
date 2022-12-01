@@ -1,3 +1,9 @@
+from pandas import DataFrame, concat
+
+from svf_package.efficiency.csvf_eff import CSVFEff
+from svf_package.efficiency.svf_eff import SVFEff
+
+
 class SVF:
     """Clase del algoritmo Support Vector Frontiers
     """
@@ -25,6 +31,8 @@ class SVF:
         self.model_d = None
         self.solution = None
         self.name = None
+        self.df_estimation = None
+        self.df_eff = None
 
     def modify_model(self, c, eps):
         """Método que se utiliza para modificar el valor de C y las restricciones de un modelo
@@ -85,3 +93,27 @@ class SVF:
             prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]), 3)
             prediction_list.append(prediction)
         return prediction_list
+
+    def get_df_estimation(self):
+        if self.solution is None:
+            self.solve()
+        df_estimation = self.data.filter(self.inputs).copy()
+        df_y_est = list()
+        for dmu_index in range(len(df_estimation)):
+            dmu = df_estimation.iloc[dmu_index].to_list()
+            y_est = self.get_estimation(dmu)
+            df_y_est.append(y_est)
+        name_columns = self.outputs
+        df_y_est = DataFrame(df_y_est,columns=name_columns)
+        df_y_est = concat((df_estimation, df_y_est), axis=1)
+        self.df_estimation = df_y_est
+
+    def get_svf_efficiencies(self,methods):
+        eff_method = SVFEff(self.inputs, self.outputs, self.data, methods, self.df_estimation)
+        eff_method.get_efficiencies()
+        self.df_eff = eff_method.df_eff
+
+    def get_csvf_efficiencies(self,methods):
+        eff_method = CSVFEff(self.inputs, self.outputs, self.data, methods, self.df_estimation)
+        eff_method.get_efficiencies()
+        self.df_eff = eff_method.df_eff

@@ -1,9 +1,10 @@
 from docplex.mp.model import Model
+
 from svf_package.efficiency.efficiency_method import EfficiencyMethod
 
 
-class DEA(EfficiencyMethod):
-    def __init__(self, inputs, outputs, data, methods, df_estimation=None):
+class SVFEff(EfficiencyMethod):
+    def __init__(self, inputs, outputs, data, methods, df_estimation):
         super().__init__(inputs, outputs, data, methods, df_estimation)
 
     def calculate_ri(self):
@@ -12,11 +13,15 @@ class DEA(EfficiencyMethod):
             # Datos de las variables distintas de Y
             X = self.data.filter(self.inputs)
             x = X.values.tolist()
+            x_d = self.df_estimation.filter(self.inputs)
+            x_d = x_d.values.tolist()
             # Número de dimensiones X del problema
             n_dim_x = len(self.inputs)
             # Datos de las variables Y
             Y = self.data.filter(self.outputs)
             y = Y.values.tolist()
+            Y_d = self.df_estimation.filter(self.outputs)
+            y_d = Y_d.values.tolist()
             # Número de dimensiones y del problema
             n_dim_y = len(self.outputs)
             # Número de observaciones del problema
@@ -28,17 +33,17 @@ class DEA(EfficiencyMethod):
             # Variable theta
             theta = mdl.continuous_var(name="theta", ub=1e33, lb=0)
             # Variable landa
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.minimize(theta)
             # Restricciones
             for j in range(n_dim_x):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * x[k][j] for k in range(n_obs)) <= theta * x[obs][j]
+                    mdl.sum(landa_var[k] * x_d[k][j] for k in range(n_obs)) <= theta * x[obs][j]
                 )
             for r in range(n_dim_y):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * y[k][r] for k in range(n_obs)) >= y[obs][r]
+                    mdl.sum(landa_var[k] * y_d[k][r] for k in range(n_obs)) >= y[obs][r]
                 )
             mdl.add_constraint(mdl.sum(landa_var[k] for k in range(n_obs)) == 1)
             msol = mdl.solve()
@@ -55,11 +60,15 @@ class DEA(EfficiencyMethod):
             # Datos de las variables distintas de Y
             X = self.data.filter(self.inputs)
             x = X.values.tolist()
+            x_d = self.df_estimation.filter(self.inputs)
+            x_d = x_d.values.tolist()
             # Número de dimensiones X del problema
             n_dim_x = len(self.inputs)
             # Datos de las variables Y
             Y = self.data.filter(self.outputs)
             y = Y.values.tolist()
+            Y_d = self.df_estimation.filter(self.outputs)
+            y_d = Y_d.values.tolist()
             # Número de dimensiones y del problema
             n_dim_y = len(self.outputs)
             # Número de observaciones del problema
@@ -71,17 +80,17 @@ class DEA(EfficiencyMethod):
             # Variable phi
             phi = mdl.continuous_var(name="phi", ub=1e33, lb=0)
             # Variable landa
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.maximize(phi)
             # Restricciones
             for j in range(n_dim_x):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * x[k][j] for k in range(n_obs)) <= x[obs][j]
+                    mdl.sum(landa_var[k] * x_d[k][j] for k in range(n_obs)) <= x[obs][j]
                 )
             for r in range(n_dim_y):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * y[k][r] for k in range(n_obs)) >= phi * y[obs][r]
+                    mdl.sum(landa_var[k] * y_d[k][r] for k in range(n_obs)) >= phi * y[obs][r]
                 )
             mdl.add_constraint(mdl.sum(landa_var[k] for k in range(n_obs)) == 1)
             msol = mdl.solve()
@@ -98,11 +107,15 @@ class DEA(EfficiencyMethod):
             # Datos de las variables distintas de Y
             X = self.data.filter(self.inputs)
             x = X.values.tolist()
+            x_d = self.df_estimation.filter(self.inputs)
+            x_d = x_d.values.tolist()
             # Número de dimensiones X del problema
             n_dim_x = len(self.inputs)
             # Datos de las variables Y
             Y = self.data.filter(self.outputs)
             y = Y.values.tolist()
+            Y_d = self.df_estimation.filter(self.outputs)
+            y_d = Y_d.values.tolist()
             # Número de dimensiones y del problema
             n_dim_y = len(self.outputs)
             # Número de observaciones del problema
@@ -114,19 +127,19 @@ class DEA(EfficiencyMethod):
             # Variable beta
             beta = mdl.continuous_var(name="beta", ub=1e33, lb=0)
             # Variable landa
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.maximize(beta)
             # Restricciones
             for j in range(n_dim_x):
                 g = x[obs][j]
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * x[k][j] for k in range(n_obs)) <= x[obs][j] - beta * g
+                    mdl.sum(landa_var[k] * x_d[k][j] for k in range(n_obs)) <= x[obs][j] - beta * g
                 )
             for r in range(n_dim_y):
                 g = y[obs][r]
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * y[k][r] for k in range(n_obs)) >= y[obs][r] + beta * g
+                    mdl.sum(landa_var[k] * y_d[k][r] for k in range(n_obs)) >= y[obs][r] + beta * g
                 )
             mdl.add_constraint(mdl.sum(landa_var[k] for k in range(n_obs)) == 1)
             msol = mdl.solve()
@@ -145,11 +158,15 @@ class DEA(EfficiencyMethod):
             # Datos de las variables distintas de Y
             X = self.data.filter(self.inputs)
             x = X.values.tolist()
+            x_d = self.df_estimation.filter(self.inputs)
+            x_d = x_d.values.tolist()
             # Número de dimensiones X del problema
             n_dim_x = len(self.inputs)
             # Datos de las variables Y
             Y = self.data.filter(self.outputs)
             y = Y.values.tolist()
+            Y_d = self.df_estimation.filter(self.outputs)
+            y_d = Y_d.values.tolist()
             # Número de dimensiones y del problema
             n_dim_y = len(self.outputs)
             # Número de observaciones del problema
@@ -163,19 +180,19 @@ class DEA(EfficiencyMethod):
             s_pos_var = mdl.continuous_var_dict(name_s_pos, ub=1e+33, lb=0, name='s_pos')
             # Variable landa
             name_landa = range(0, n_obs)
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.maximize(mdl.sum(s_neg_var[j] * w_inp[j] for j in range(n_dim_x)) +
                          mdl.sum(s_pos_var[r] * w_out[r] for r in range(n_dim_y)))
             # Restricciones
             for j in range(n_dim_x):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * x[k][j] for k in range(n_obs)) <= x[obs][j] - s_neg_var[j]
+                    mdl.sum(landa_var[k] * x_d[k][j] for k in range(n_obs)) <= x[obs][j] - s_neg_var[j]
                 )
 
             for r in range(n_dim_y):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * y[k][r] for k in range(n_obs)) >= y[obs][r] + s_pos_var[r]
+                    mdl.sum(landa_var[k] * y_d[k][r] for k in range(n_obs)) >= y[obs][r] + s_pos_var[r]
                 )
 
             mdl.add_constraint(mdl.sum(landa_var[k] for k in range(n_obs)) == 1)
@@ -185,7 +202,6 @@ class DEA(EfficiencyMethod):
                 eff = round(mdl.solution.get_objective_value(), 3)
             else:
                 eff = 0
-            # print(mdl.export_to_string())
             list_eff.append(eff)
         return list_eff
 
@@ -195,13 +211,17 @@ class DEA(EfficiencyMethod):
             # Datos de las variables distintas de Y
             X = self.data.filter(self.inputs)
             x = X.values.tolist()
+            x_d = self.df_estimation.filter(self.inputs)
+            x_d = x_d.values.tolist()
             # Número de dimensiones X del problema
-            n_dim_x = len(X.columns)
+            n_dim_x = len(self.inputs)
             # Datos de las variables Y
             Y = self.data.filter(self.outputs)
             y = Y.values.tolist()
+            Y_d = self.df_estimation.filter(self.outputs)
+            y_d = Y_d.values.tolist()
             # Número de dimensiones y del problema
-            n_dim_y = len(Y.columns)
+            n_dim_y = len(self.outputs)
             # Número de observaciones del problema
             n_obs = len(Y)
             mdl = Model("FDH INPUT ORIENTED RUSSELL")
@@ -211,17 +231,17 @@ class DEA(EfficiencyMethod):
             theta_var = mdl.continuous_var_dict(name_theta, name="theta", ub=1, lb=0)
             # Variable landa
             name_landa = range(0, n_obs)
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa")
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.minimize(mdl.sum(theta_var[j] for j in range(n_dim_x)) / n_dim_x)
             # Restricciones
             for j in range(n_dim_x):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * x[k][j] for k in range(n_obs)) <= theta_var[j] * x[obs][j]
+                    mdl.sum(landa_var[k] * x_d[k][j] for k in range(n_obs)) <= theta_var[j] * x[obs][j]
                 )
             for r in range(n_dim_y):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * y[k][r] for k in range(n_obs)) >= y[obs][r]
+                    mdl.sum(landa_var[k] * y_d[k][r] for k in range(n_obs)) >= y[obs][r]
                 )
             mdl.add_constraint(mdl.sum(landa_var[k] for k in range(n_obs)) == 1)
             msol = mdl.solve()
@@ -238,13 +258,17 @@ class DEA(EfficiencyMethod):
             # Datos de las variables distintas de Y
             X = self.data.filter(self.inputs)
             x = X.values.tolist()
+            x_d = self.df_estimation.filter(self.inputs)
+            x_d = x_d.values.tolist()
             # Número de dimensiones X del problema
-            n_dim_x = len(X.columns)
+            n_dim_x = len(self.inputs)
             # Datos de las variables Y
             Y = self.data.filter(self.outputs)
             y = Y.values.tolist()
+            Y_d = self.df_estimation.filter(self.outputs)
+            y_d = Y_d.values.tolist()
             # Número de dimensiones y del problema
-            n_dim_y = len(Y.columns)
+            n_dim_y = len(self.outputs)
             # Número de observaciones del problema
             n_obs = len(Y)
             mdl = Model("DEA OUTPUT ORIENTED RUSSELL")
@@ -254,17 +278,17 @@ class DEA(EfficiencyMethod):
             phi_var = mdl.continuous_var_dict(name_phi, name="phi", ub=1e33, lb=1)
             # Variable landa
             name_landa = range(0, n_obs)
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa", ub=1e33, lb=0)
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
             # Función objetivo
             mdl.maximize(mdl.sum(phi_var[r] for r in range(n_dim_y)) / n_dim_y)
             # Restricciones
             for j in range(n_dim_x):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * x[k][j] for k in range(n_obs)) <= x[obs][j]
+                    mdl.sum(landa_var[k] * x_d[k][j] for k in range(n_obs)) <= x[obs][j]
                 )
             for r in range(n_dim_y):
                 mdl.add_constraint(
-                    mdl.sum(landa_var[k] * y[k][r] for k in range(n_obs)) >= y[obs][r] * phi_var[r]
+                    mdl.sum(landa_var[k] * y_d[k][r] for k in range(n_obs)) >= y[obs][r] * phi_var[r]
                 )
             mdl.add_constraint(mdl.sum(landa_var[k] for k in range(n_obs)) == 1)
             msol = mdl.solve()
@@ -272,7 +296,6 @@ class DEA(EfficiencyMethod):
                 eff = mdl.solution.get_objective_value()
             else:
                 eff = 0
-            # print(mdl.export_to_string())
             list_eff.append(eff)
         return list_eff
 
@@ -282,13 +305,17 @@ class DEA(EfficiencyMethod):
             # Datos de las variables distintas de Y
             X = self.data.filter(self.inputs)
             x = X.values.tolist()
+            x_d = self.df_estimation.filter(self.inputs)
+            x_d = x_d.values.tolist()
             # Número de dimensiones X del problema
-            n_dim_x = len(X.columns)
+            n_dim_x = len(self.inputs)
             # Datos de las variables Y
             Y = self.data.filter(self.outputs)
             y = Y.values.tolist()
+            Y_d = self.df_estimation.filter(self.outputs)
+            y_d = Y_d.values.tolist()
             # Número de dimensiones y del problema
-            n_dim_y = len(Y.columns)
+            n_dim_y = len(self.outputs)
             # Número de observaciones del problema
             n_obs = len(Y)
 
@@ -308,7 +335,7 @@ class DEA(EfficiencyMethod):
 
             # Variable landa
             name_landa = range(0, n_obs)
-            landa_var = mdl.continuous_var_dict(name_landa, name="landa")
+            landa_var = mdl.binary_var_dict(name_landa, name="landa")
 
             # Función objetivo
             summa = mdl.sum(t_neg_var[j]/x[obs][j] for j in range(n_dim_x))
@@ -326,7 +353,7 @@ class DEA(EfficiencyMethod):
             for j in range(n_dim_x):
                 mdl.add_constraint(
                     -beta_var * x[obs][j] +
-                    mdl.sum(landa_var[k] * x[k][j] for k in range(n_obs)) +
+                    mdl.sum(landa_var[k] * x_d[k][j] for k in range(n_obs)) +
                     t_neg_var[j]
                     == 0
                 )
@@ -335,7 +362,7 @@ class DEA(EfficiencyMethod):
             for r in range(n_dim_y):
                 mdl.add_constraint(
                     -beta_var * y[obs][r] +
-                    mdl.sum(landa_var[k] * y[k][r] for k in range(n_obs)) -
+                    mdl.sum(landa_var[k] * y_d[k][r] for k in range(n_obs)) -
                     t_pos_var[r]
                     == 0
                 )
@@ -348,7 +375,5 @@ class DEA(EfficiencyMethod):
                 eff = mdl.solution.get_objective_value()
             else:
                 eff = 0
-            # print(mdl.export_to_string())
             list_eff.append(eff)
         return list_eff
-
