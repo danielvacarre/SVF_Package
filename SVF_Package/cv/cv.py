@@ -51,6 +51,8 @@ class CrossValidation(object):
                 
                <=1: aplica el método train-test
         """
+        if self.method == "dual":
+            raise "Dual method can not implementate cross validation."
         self.results_by_fold = DataFrame(columns=["C", "eps", "d", "error"])
         if self.n_folds > 1:
             self.kfolds()
