@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
-VERSION = '0.0.2'
+VERSION = '0.0.4'
 DESCRIPTION = 'Paquete Support Vector Frontier'
 PACKAGE_NAME = 'svf_package'
 AUTHOR = 'Daniel Valero Carreras'
