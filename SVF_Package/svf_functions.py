@@ -58,3 +58,37 @@ def create_SVF(method, inputs, outputs, data, c, eps, d):
     else:
         raise RuntimeError("The method selected doesn't exist")
     return svf
+
+def create_ranking(method_ranking, method_svf, inputs, outputs, data, c, eps, d):
+    """Función que crea un objeto del tipo SVF en función del método que se selecciona
+    Args:
+        method (string): Método SVF que se quiere utilizar
+        inputs (list): Inputs a evaluar en el conjunto de dato
+        outputs (list): Outputs a evaluar en el conjunto de datos
+        data (pandas.DataFrame): Conjunto de datos a evaluar
+        c (float): Valores del hiperparámetro C del modelo
+        eps (float): Valores del hiperparámetro épsilon del modelo
+        d (int): Valor del hiperparámetro d del modelo
+
+    Raises:
+        RuntimeError: Indica que no existe el método seleccionado
+
+    Returns:
+        object: Devuelve un objeto del método SVF seleccionado
+    """
+    #TODO:
+    if method_ranking == "RFE":
+        pass
+        # svf = SVFSplines(method_svf, inputs, outputs, data, c, eps, d)
+    elif method_ranking == "PFI":
+        pass
+        # svf = SSVF(method_svf, inputs, outputs, data, c, eps, d)
+    elif method_ranking == "Pseudosamples":
+        pass
+        # svf = SVFC(method_svf, inputs, outputs, data, c, eps, d)
+    elif method_ranking == "Bootstrap":
+        pass
+        # svf = SVFC(method_svf, inputs, outputs, data, c, eps, d)
+    else:
+        raise RuntimeError("The method selected doesn't exist")
+    return svf
