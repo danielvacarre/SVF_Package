@@ -1,9 +1,10 @@
+from datetime import datetime
 from docplex.mp.model import Model
 from numpy import dot, array, around
 from svf_package.grid.svfgrid import SVFGrid
 from svf_package.methods.svf import SVF
 from svf_package.solution.svf_dual_solution import SVFDualSolution
-
+FMT = "%d-%m-%Y %H:%M:%S"
 
 class SVFDual(SVF):
 
@@ -24,6 +25,8 @@ class SVFDual(SVF):
     def train(self):
         """Método que entrena un modelo SVF en su forma dual
         """
+        now = datetime.now()
+        inicio_train = now.strftime(FMT)
 
         outputs_df = self.data.filter(self.outputs)
         y = outputs_df.values.tolist()
@@ -90,9 +93,17 @@ class SVFDual(SVF):
 
         self.model = mdl
 
+        now = datetime.now()
+        fin_train = now.strftime(FMT)
+        self.train_time = datetime.strptime(fin_train, FMT) - datetime.strptime(inicio_train, FMT)
+
     def solve(self):
         """Método que soluciona el modelo entrenado.
         """
+
+        now = datetime.now()
+        inicio_solve = now.strftime(FMT)
+
         n_obs = len(self.data)
         n_var = len(self.grid.data_grid.phi[0][0])
         n_out = len(self.outputs)
@@ -137,3 +148,7 @@ class SVFDual(SVF):
             mat_sol_w[out] = around(sol, 3).tolist()
 
         self.solution = SVFDualSolution(mat_sol_gamma, mat_sol_alpha, mat_sol_delta, mat_sol_w)
+
+        now = datetime.now()
+        fin_solve = now.strftime(FMT)
+        self.solve_time = datetime.strptime(fin_solve, FMT) - datetime.strptime(inicio_solve, FMT)

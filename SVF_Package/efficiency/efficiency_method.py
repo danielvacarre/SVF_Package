@@ -8,7 +8,9 @@ class EfficiencyMethod:
         self.df_eff = None
 
     def get_efficiencies(self):
-        self.df_eff = self.data.copy()
+        df_eff = self.data.filter(self.inputs).copy()
+        df_eff2 = self.data.filter(self.outputs).copy()
+        self.df_eff = df_eff.join(df_eff2)
         switch_method = {
             "ri": self.calculate_ri(),
             "ro": self.calculate_ro(),

@@ -1,7 +1,9 @@
+from datetime import datetime
 from docplex.mp.model import Model
 from svf_package.grid.svfgrid import SVFGrid
 from svf_package.methods.svf import SVF
 from svf_package.solution.svf_solution import SVFPrimalSolution
+FMT = "%d-%m-%Y %H:%M:%S"
 
 
 class SSVF(SVF):
@@ -25,6 +27,8 @@ class SSVF(SVF):
     def train(self):
         """Metodo que entrena un modelo SSVF
         """
+        now = datetime.now()
+        inicio_train = now.strftime(FMT)
 
         y_df = self.data.filter(self.outputs)
         y = y_df.values.tolist()
@@ -85,9 +89,15 @@ class SSVF(SVF):
         if self.model_d is None:
             self.model_d = mdl
 
+        now = datetime.now()
+        fin_train = now.strftime(FMT)
+        self.train_time = datetime.strptime(fin_train, FMT) - datetime.strptime(inicio_train, FMT)
+
     def solve(self):
         """Solución de un modelo SVF
         """
+        now = datetime.now()
+        inicio_solve = now.strftime(FMT)
 
         n_out = len(self.outputs)
         self.model.solve()
@@ -116,3 +126,7 @@ class SSVF(SVF):
                 mat_xi[out].append(round(sol_xi[cont], 6))
                 cont += 1
         self.solution = SVFPrimalSolution(mat_w, mat_xi)
+
+        now = datetime.now()
+        fin_solve = now.strftime(FMT)
+        self.solve_time = datetime.strptime(fin_solve, FMT) - datetime.strptime(inicio_solve, FMT)

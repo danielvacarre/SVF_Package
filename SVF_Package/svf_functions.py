@@ -91,4 +91,4 @@ def create_ranking(method_ranking, method_svf, inputs, outputs, data, c, eps, d)
         # svf = SVFC(method_svf, inputs, outputs, data, c, eps, d)
     else:
         raise RuntimeError("The method selected doesn't exist")
-    return svf
+    # return svf

@@ -1,9 +1,10 @@
+from datetime import datetime
 from docplex.mp.model import Model
 from numpy import asarray, float32
 from svf_package.grid.svfgrid import SVFGrid
 from svf_package.methods.svf import SVF
 from svf_package.solution.svf_solution import SVFPrimalSolution
-
+FMT = "%d-%m-%Y %H:%M:%S"
 
 class SVFC(SVF):
     """Clase del modelo SVF Splines
@@ -24,6 +25,9 @@ class SVFC(SVF):
         super().__init__(method, inputs, outputs, data, C, eps, d)
 
     def train(self):
+
+        now = datetime.now()
+        inicio_train = now.strftime(FMT)
 
         y_df = self.data.filter(self.outputs)
         y = y_df.values.tolist()
@@ -112,9 +116,16 @@ class SVFC(SVF):
         if self.model_d is None:
             self.model_d = mdl
 
+        now = datetime.now()
+        fin_train = now.strftime(FMT)
+        self.train_time = datetime.strptime(fin_train, FMT) - datetime.strptime(inicio_train, FMT)
+
     def solve(self):
         """Solución de un modelo SVF
         """
+        now = datetime.now()
+        inicio_solve = now.strftime(FMT)
+
         n_out = len(self.outputs)
         self.model.solve()
         name_var = self.model.iter_variables()
@@ -146,3 +157,6 @@ class SVFC(SVF):
                 mat_xi[out].append(round(sol_xi[cont], 6))
                 cont += 1
         self.solution = SVFPrimalSolution(mat_w, mat_xi)
+        now = datetime.now()
+        fin_solve = now.strftime(FMT)
+        self.solve_time = datetime.strptime(fin_solve, FMT) - datetime.strptime(inicio_solve, FMT)

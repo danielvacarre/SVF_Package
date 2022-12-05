@@ -1,8 +1,9 @@
+from datetime import datetime
 from pandas import DataFrame
 from sklearn.model_selection import KFold, train_test_split
-
 from svf_package.cv.fold import FOLD
 from svf_package.svf_functions import calculate_mse, create_SVF
+FMT = "%d-%m-%Y %H:%M:%S"
 
 
 class CrossValidation(object):
@@ -44,6 +45,7 @@ class CrossValidation(object):
         self.best_C = None
         self.best_eps = None
         self.best_d = None
+        self.cv_time = None
 
     def cv(self):
         """Función que ejecuta el tipo de validación cruzada:
@@ -62,12 +64,16 @@ class CrossValidation(object):
     def kfolds(self):
         """Función que ejecuta la validación cruzada por k-folds
         """
+        now = datetime.now()
+        fecha_inicio_cv = now.strftime(FMT)
         kf = KFold(n_splits=self.n_folds, shuffle=True, random_state=self.seed)
         fold_num = 0
         list_fold = list()
         for train_index, test_index in kf.split(self.data):
             fold_num += 1
             data_train, data_test = self.data.iloc[train_index], self.data.iloc[test_index]
+            print(data_train)
+            print(data_test)
             fold = FOLD(data_train, data_test, fold_num)
             models = list()
             for d in self.D:
@@ -76,10 +82,12 @@ class CrossValidation(object):
                 for c in self.C:
                     for e in self.eps:
                         if self.verbose:
-                            print("     FOLD:", fold_num, "C:", c, "EPS:", e, "D:", d)
+                            print("FOLD:", fold_num, "C:", c, "EPS:", e, "D:", d)
                         svf_obj.model = svf_obj.modify_model(c, e)
                         svf_obj.solve()
+                        print(svf_obj.model.export_to_string())
                         error = calculate_mse(svf_obj, fold.data_test)
+                        print(error)
                         self.results_by_fold = self.results_by_fold.append(
                             {
                                 "Num": fold_num,
@@ -91,20 +99,26 @@ class CrossValidation(object):
                             ignore_index=True,
                         )
                         models.append(svf_obj.model)
+
             fold.models = models
             list_fold.append(fold)
+        now = datetime.now()
+        fecha_fin_cv = now.strftime(FMT)
+        self.cv_time = datetime.strptime(fecha_fin_cv, FMT) - datetime.strptime(fecha_inicio_cv, FMT)
         self.folds = list_fold
         self.results = self.results_by_fold.groupby(['C', 'eps', 'd']).sum() / self.n_folds
-        self.results = self.results.sort_index(ascending=False)
+        self.results = self.results.sort_values(by=["error","eps","d"])
         self.results = self.results.drop(['Num'], axis=1)
         min_error = self.results[["error"]].idxmin().values
         self.best_C = min_error[0][0]
         self.best_eps = min_error[0][1]
-        self.best_d = min_error[0][2]
+        self.best_d = int(min_error[0][2])
 
     def train_test(self):
         """Función que ejecuta la validación cruzada por un porcentaje de train-test
         """
+        now = datetime.now()
+        fecha_inicio_cv = now.strftime(FMT)
         data_train, data_test = train_test_split(self.data, test_size=self.ts, random_state=self.seed)
         list_fold = list()
         fold = FOLD(data_train, data_test, "TRAIN-TEST")
@@ -131,6 +145,9 @@ class CrossValidation(object):
                         },
                         ignore_index=True,
                      )
+        now = datetime.now()
+        fecha_fin_cv = now.strftime(FMT)
+        self.cv_time = datetime.strptime(fecha_fin_cv, FMT) - datetime.strptime(fecha_inicio_cv, FMT)
         self.folds = list_fold
         self.results = self.results_by_fold.sort_index(ascending=False)
         self.results = self.results.drop(['Num'], axis=1)

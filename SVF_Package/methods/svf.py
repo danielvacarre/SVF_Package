@@ -1,6 +1,7 @@
 from pandas import DataFrame, concat
-
 from svf_package.efficiency.csvf_eff import CSVFEff
+from svf_package.efficiency.dea import DEA
+from svf_package.efficiency.fdh import FDH
 from svf_package.efficiency.svf_eff import SVFEff
 
 
@@ -33,6 +34,8 @@ class SVF:
         self.name = None
         self.df_estimation = None
         self.df_eff = None
+        self.solve_time = None
+        self.train_time = None
 
     def modify_model(self, c, eps):
         """Método que se utiliza para modificar el valor de C y las restricciones de un modelo
@@ -109,11 +112,44 @@ class SVF:
         self.df_estimation = df_y_est
 
     def get_svf_efficiencies(self,methods):
+        if self.df_eff is None:
+            self.get_df_estimation()
         eff_method = SVFEff(self.inputs, self.outputs, self.data, methods, self.df_estimation)
         eff_method.get_efficiencies()
         self.df_eff = eff_method.df_eff
 
     def get_csvf_efficiencies(self,methods):
+        if self.df_eff is None:
+            self.get_df_estimation()
         eff_method = CSVFEff(self.inputs, self.outputs, self.data, methods, self.df_estimation)
         eff_method.get_efficiencies()
         self.df_eff = eff_method.df_eff
+
+    def get_fdh_efficiencies(self, methods):
+        if self.df_eff is None:
+            self.get_df_estimation()
+        eff_method = FDH(self.inputs, self.outputs, self.data, methods, self.df_estimation)
+        eff_method.get_efficiencies()
+        return eff_method.df_eff
+
+    def get_dea_efficiencies(self, methods):
+        if self.df_eff is None:
+            self.get_df_estimation()
+        eff_method = DEA(self.inputs, self.outputs, self.data, methods, self.df_estimation)
+        eff_method.get_efficiencies()
+        return eff_method.df_eff
+
+    def get_df_all_estimation(self):
+        df_estimation = self.data.filter(self.inputs).copy()
+        df_estimation = df_estimation.join(self.data.filter(self.outputs))
+        fdh = self.get_fdh_efficiencies(["ro"])
+        df_estimation['y_FDH'] = fdh['ro'] * fdh['y']
+        self.get_svf_efficiencies(["ro"])
+        df_estimation['y_SVF'] = self.df_eff['ro'] * self.df_eff['y']
+        dea = self.get_dea_efficiencies(["ro"])
+        df_estimation['y_DEA'] = dea['ro'] * dea['y']
+        self.get_csvf_efficiencies(["ro"])
+        df_estimation['y_CSVF'] = self.df_eff['ro'] * self.df_eff['y']
+        return df_estimation
+
+
