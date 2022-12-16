@@ -154,7 +154,7 @@ class SVFC(SVF):
         cont = 0
         for out in range(n_out):
             for obs in range(len(self.data)):
-                mat_xi[out].append(round(sol_xi[cont], 6))
+                mat_xi[out].append(sol_xi[cont])
                 cont += 1
         self.solution = SVFPrimalSolution(mat_w, mat_xi)
         now = datetime.now()

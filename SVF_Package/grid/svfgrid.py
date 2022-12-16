@@ -99,16 +99,18 @@ class SVFGrid(GRID):
         x = self.data_grid.filter(self.inputs)
         x_list = x.values.tolist()
         phi_list = list()
+        pos_list = list()
         c_cells = list()
         for x in x_list:
             p = self.search_dmu(x)
+            pos_list.append(p)
             phi = self.calculate_dmu_phi(p)
             phi_list.append(phi)
             c_cell = search_contiguous_cell(p)
             c_cells.append(c_cell)
+        self.data_grid["pos"] = pos_list
         self.data_grid["phi"] = phi_list
         self.data_grid["c_cells"] = c_cells
-
 
 def search_contiguous_cell(cell):
     con_c_list = list()

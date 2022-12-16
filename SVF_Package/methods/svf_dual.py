@@ -1,9 +1,12 @@
 from datetime import datetime
+
 from docplex.mp.model import Model
 from numpy import dot, array, around
+
 from svf_package.grid.svfgrid import SVFGrid
 from svf_package.methods.svf import SVF
 from svf_package.solution.svf_dual_solution import SVFDualSolution
+
 FMT = "%d-%m-%Y %H:%M:%S"
 
 class SVFDual(SVF):
@@ -152,3 +155,25 @@ class SVFDual(SVF):
         now = datetime.now()
         fin_solve = now.strftime(FMT)
         self.solve_time = datetime.strptime(fin_solve, FMT) - datetime.strptime(inicio_solve, FMT)
+
+    def calculate_matrix_transformations_without_l(self, l):
+        matrix_phi_l = list()
+        for dmu_pos in self.grid.data_grid.pos:
+            phi = self.calculate_transformation_observation_without_l(dmu_pos, l)
+            matrix_phi_l.append(phi)
+        return matrix_phi_l
+
+    def calculate_transformation_observation_without_l(self, dmu_pos, l):
+        phi = list()
+        for celda in self.grid.df_grid.id_cell:
+            if celda[l] == 0:
+                for j in range(len(celda)):
+                    if dmu_pos[j] >= celda[j]:
+                        r = 1
+                    else:
+                        r = 0
+                        break
+            else:
+                r = 0
+            phi.append(r)
+        return phi

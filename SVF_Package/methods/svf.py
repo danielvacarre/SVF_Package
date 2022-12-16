@@ -1,4 +1,5 @@
 from pandas import DataFrame, concat
+
 from svf_package.efficiency.csvf_eff import CSVFEff
 from svf_package.efficiency.dea import DEA
 from svf_package.efficiency.fdh import FDH
@@ -90,7 +91,13 @@ class SVF:
         if len(dmu) != len(self.inputs):
             raise RuntimeError("El número de inputs de la DMU no coincide con el número de inputs del problema.")
         dmu_cell = self.grid.search_dmu(dmu)
-        phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell, "phi"].values[0]
+        if (dmu_cell.count(-1) >= 1):
+            phi = self.grid.df_grid.loc[0, "phi"]
+            for i in range(len(phi)):
+                for j in range(len(phi[i])):
+                    phi[i][j] = 0
+        else:
+            phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell, "phi"].values[0]
         prediction_list = list()
         for out in range(len(self.outputs)):
             prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]), 3)

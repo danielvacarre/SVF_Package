@@ -1,8 +1,11 @@
 from datetime import datetime
+
 from docplex.mp.model import Model
+
 from svf_package.grid.svfgrid import SVFGrid
 from svf_package.methods.svf import SVF
 from svf_package.solution.svf_solution import SVFPrimalSolution
+
 FMT = "%d-%m-%Y %H:%M:%S"
 
 
@@ -27,6 +30,7 @@ class SSVF(SVF):
     def train(self):
         """Metodo que entrena un modelo SSVF
         """
+
         now = datetime.now()
         inicio_train = now.strftime(FMT)
 
