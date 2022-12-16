@@ -3,6 +3,7 @@ from docplex.mp.model import Model
 from svf_package.efficiency.efficiency_method import EfficiencyMethod
 
 
+# TODO: explicar las funciones
 class SVFEff(EfficiencyMethod):
     def __init__(self, inputs, outputs, data, methods, df_estimation):
         super().__init__(inputs, outputs, data, methods, df_estimation)

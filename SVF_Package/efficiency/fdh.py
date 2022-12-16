@@ -1,6 +1,7 @@
 from docplex.mp.model import Model
 from svf_package.efficiency.efficiency_method import EfficiencyMethod
 
+# TODO: explicar las funciones
 class FDH(EfficiencyMethod):
     def __init__(self, inputs, outputs, data, methods, df_estimation=None):
         super().__init__(inputs, outputs, data, methods, df_estimation)
@@ -350,3 +351,4 @@ class FDH(EfficiencyMethod):
             # print(mdl.export_to_string())
             list_eff.append(eff)
         return list_eff
+

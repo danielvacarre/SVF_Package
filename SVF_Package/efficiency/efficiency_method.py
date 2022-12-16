@@ -1,3 +1,4 @@
+# TODO: explicar las funciones
 class EfficiencyMethod:
     def __init__(self, inputs, outputs, data, methods, df_estimation=None):
         self.data = data
