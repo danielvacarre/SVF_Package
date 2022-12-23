@@ -1,12 +1,28 @@
 from docplex.mp.model import Model
 from svf_package.efficiency.efficiency_method import EfficiencyMethod
 
-# TODO: explicar las funciones
+
 class DEA(EfficiencyMethod):
+
     def __init__(self, inputs, outputs, data, methods, df_estimation=None):
+        """Constructor de la clase DEA. Hereda de EfficiencyMethod
+
+        Args:
+            inputs (list): Inputs a evaluar en el conjunto de dato.
+            outputs (list): Outputs a evaluar en el conjunto de datos.
+            data (pandas.DataFrame): Conjunto de datos a evaluar.
+            methods (list): lista de métodos de eficiencia a calcular.
+            df_estimation (pandas.DataFrame): dataframe que devuelve la estimación de eficiencia para los métodos
+            seleccionados.
+        """
         super().__init__(inputs, outputs, data, methods, df_estimation)
 
     def calculate_ri(self):
+        """Cálculo de la eficiencia BCC input
+
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -50,6 +66,10 @@ class DEA(EfficiencyMethod):
         return list_eff
 
     def calculate_ro(self):
+        """Cálculo de la eficiencia BCC ouput
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -93,6 +113,10 @@ class DEA(EfficiencyMethod):
         return list_eff
 
     def calculate_ddf(self):
+        """Cálculo de la eficiencia Directional Distance Function
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -138,6 +162,10 @@ class DEA(EfficiencyMethod):
         return list_eff
 
     def calculate_wa(self):
+        """Cálculo de la eficiencia Weighted Additive
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         w_inp = self.calculate_wa_w_inp()
         w_out = self.calculate_wa_w_out()
         list_eff = list()
@@ -190,6 +218,10 @@ class DEA(EfficiencyMethod):
         return list_eff
 
     def calculate_rui(self):
+        """Cálculo de la eficiencia Russell Input
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -233,6 +265,10 @@ class DEA(EfficiencyMethod):
         return list_eff
 
     def calculate_ruo(self):
+        """Cálculo de la eficiencia Russell Output
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -277,6 +313,10 @@ class DEA(EfficiencyMethod):
         return list_eff
 
     def calculate_erg(self):
+        """Cálculo de la eficiencia Enhanced Russell Graph
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -311,15 +351,15 @@ class DEA(EfficiencyMethod):
             landa_var = mdl.continuous_var_dict(name_landa, name="landa")
 
             # Función objetivo
-            summa = mdl.sum(t_neg_var[j]/x[obs][j] for j in range(n_dim_x))
-            mdl.minimize(beta_var - (1/n_dim_x) * summa)
+            summa = mdl.sum(t_neg_var[j] / x[obs][j] for j in range(n_dim_x))
+            mdl.minimize(beta_var - (1 / n_dim_x) * summa)
 
             # Restricciones
 
             # R1
-            summa1 = mdl.sum(t_pos_var[r]/y[obs][r] for r in range(n_dim_y))
+            summa1 = mdl.sum(t_pos_var[r] / y[obs][r] for r in range(n_dim_y))
             mdl.add_constraint(
-                beta_var + (1/n_dim_y) * summa1 == 1
+                beta_var + (1 / n_dim_y) * summa1 == 1
             )
 
             # R2
@@ -351,4 +391,3 @@ class DEA(EfficiencyMethod):
             # print(mdl.export_to_string())
             list_eff.append(eff)
         return list_eff
-

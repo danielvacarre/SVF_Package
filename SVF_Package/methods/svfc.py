@@ -4,7 +4,9 @@ from numpy import asarray, float32
 from svf_package.grid.svfgrid import SVFGrid
 from svf_package.methods.svf import SVF
 from svf_package.solution.svf_solution import SVFPrimalSolution
+
 FMT = "%d-%m-%Y %H:%M:%S"
+
 
 class SVFC(SVF):
     """Clase del modelo SVF Splines
@@ -25,6 +27,9 @@ class SVFC(SVF):
         super().__init__(method, inputs, outputs, data, C, eps, d)
 
     def train(self):
+        """
+            Método que entrena un modelo de la clase SVFC
+        """
 
         now = datetime.now()
         inicio_train = now.strftime(FMT)
@@ -40,6 +45,7 @@ class SVFC(SVF):
         # Crear el grid
         self.grid = SVFGrid(self.data, self.inputs, self.outputs, self.d)
         self.grid.create_grid()
+        self.grid.calculate_df_grid()
         # Numero de variables w
         n_var = len(self.grid.data_grid.phi[0][0])
 

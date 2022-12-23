@@ -67,7 +67,7 @@ class SVF:
         xi = {}
         xi = xi.fromkeys(name_xi, c)
 
-        a = [model.get_var_by_name(i) * w[i] for i in name_w]
+        a = [model.get_var_by_name(i) * model.get_var_by_name(i) * w[i] for i in name_w]
         b = [model.get_var_by_name(i) * xi[i] for i in name_xi]
         # Funcion objetivo
         model.minimize(model.sum(a) + model.sum(b))
@@ -91,20 +91,23 @@ class SVF:
         if len(dmu) != len(self.inputs):
             raise RuntimeError("El número de inputs de la DMU no coincide con el número de inputs del problema.")
         dmu_cell = self.grid.search_dmu(dmu)
-        if (dmu_cell.count(-1) >= 1):
-            phi = self.grid.df_grid.loc[0, "phi"]
+        if dmu_cell.count(-1) >= 1:
+            phi = self.grid.data_grid.loc[0, "phi"]
             for i in range(len(phi)):
                 for j in range(len(phi[i])):
                     phi[i][j] = 0
         else:
-            phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell, "phi"].values[0]
+            phi = self.grid.calculate_dmu_phi(dmu_cell)
         prediction_list = list()
         for out in range(len(self.outputs)):
             prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]), 3)
             prediction_list.append(prediction)
         return prediction_list
 
-    def get_df_estimation(self):
+    def get_dataset_estimation(self):
+        """
+        Clase que calcula la estimación para todo el conjunto de datos inicial en base al modelo entrenado
+        """
         if self.solution is None:
             self.solve()
         df_estimation = self.data.filter(self.inputs).copy()
@@ -114,39 +117,86 @@ class SVF:
             y_est = self.get_estimation(dmu)
             df_y_est.append(y_est)
         name_columns = self.outputs
-        df_y_est = DataFrame(df_y_est,columns=name_columns)
+        df_y_est = DataFrame(df_y_est, columns=name_columns)
         df_y_est = concat((df_estimation, df_y_est), axis=1)
         self.df_estimation = df_y_est
 
-    def get_svf_efficiencies(self,methods):
+    def get_new_dataset_estimation(self, data):
+        """Clase que devuelve la estimación para dataset proporcionado por el usuario
+
+        Args:
+            data (pandas.DataFrame): conjunto de datos sobre el que calcular la estimación
+
+        Returns:
+            pandas.DataFrame: devuelve un dataframe con la estimación SVF realizada para cada DMU
+        """
+        if self.solution is None:
+            self.solve()
+        df_estimation = data.filter(self.inputs).copy()
+        df_y_est = list()
+        for dmu_index in range(len(df_estimation)):
+            dmu = df_estimation.iloc[dmu_index].to_list()
+            y_est = self.get_estimation(dmu)
+            df_y_est.append(y_est)
+        name_columns = self.outputs
+        df_y_est = DataFrame(df_y_est, columns=name_columns)
+        df_estimation = concat((df_estimation, df_y_est), axis=1)
+        return df_estimation
+
+    def get_svf_efficiencies(self, methods):
+        """Función que calcula el dataframe de eficiencias SVF de un modelo entrenado
+
+        Args:
+            methods (list): Lista de métodos sobre los que calcular la eficiencia
+        """
         if self.df_eff is None:
-            self.get_df_estimation()
+            self.get_dataset_estimation()
         eff_method = SVFEff(self.inputs, self.outputs, self.data, methods, self.df_estimation)
         eff_method.get_efficiencies()
         self.df_eff = eff_method.df_eff
 
-    def get_csvf_efficiencies(self,methods):
+    def get_csvf_efficiencies(self, methods):
+        """Función que calcula el dataframe de eficiencias CSVF de un modelo entrenado
+
+        Args:
+            methods (list): Lista de métodos sobre los que calcular la eficiencia
+        """
         if self.df_eff is None:
-            self.get_df_estimation()
+            self.get_dataset_estimation()
         eff_method = CSVFEff(self.inputs, self.outputs, self.data, methods, self.df_estimation)
         eff_method.get_efficiencies()
         self.df_eff = eff_method.df_eff
 
     def get_fdh_efficiencies(self, methods):
+        """Función que calcula el dataframe de eficiencias FDH de un modelo entrenado
+
+        Args:
+            methods (list): Lista de métodos sobre los que calcular la eficiencia
+        """
         if self.df_eff is None:
-            self.get_df_estimation()
+            self.get_dataset_estimation()
         eff_method = FDH(self.inputs, self.outputs, self.data, methods, self.df_estimation)
         eff_method.get_efficiencies()
         return eff_method.df_eff
 
     def get_dea_efficiencies(self, methods):
+        """Función que calcula el dataframe de eficiencias DEA de un modelo entrenado
+
+        Args:
+            methods (list): Lista de métodos sobre los que calcular la eficiencia
+        """
         if self.df_eff is None:
-            self.get_df_estimation()
+            self.get_dataset_estimation()
         eff_method = DEA(self.inputs, self.outputs, self.data, methods, self.df_estimation)
         eff_method.get_efficiencies()
         return eff_method.df_eff
 
     def get_df_all_estimation(self):
+        """Método que calcula todas las estimaciones orientación output de los métodos FDH,DEA,SVF y CSVF
+
+        Returns:
+            pandas.DataFrame: Dataframe con las estimaciones FDH,DEA,SVF y CSVF del conjunto de datos inicial
+        """
         df_estimation = self.data.filter(self.inputs).copy()
         df_estimation = df_estimation.join(self.data.filter(self.outputs))
         fdh = self.get_fdh_efficiencies(["ro"])
@@ -158,5 +208,3 @@ class SVF:
         self.get_csvf_efficiencies(["ro"])
         df_estimation['y_CSVF'] = self.df_eff['ro'] * self.df_eff['y']
         return df_estimation
-
-

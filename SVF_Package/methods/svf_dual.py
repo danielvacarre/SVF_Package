@@ -9,6 +9,7 @@ from svf_package.solution.svf_dual_solution import SVFDualSolution
 
 FMT = "%d-%m-%Y %H:%M:%S"
 
+
 class SVFDual(SVF):
 
     def __init__(self, method, inputs, outputs, data, C, eps, d):
@@ -103,7 +104,6 @@ class SVFDual(SVF):
     def solve(self):
         """Método que soluciona el modelo entrenado.
         """
-
         now = datetime.now()
         inicio_solve = now.strftime(FMT)
 
@@ -157,6 +157,12 @@ class SVFDual(SVF):
         self.solve_time = datetime.strptime(fin_solve, FMT) - datetime.strptime(inicio_solve, FMT)
 
     def calculate_matrix_transformations_without_l(self, l):
+        """Función para el RFE-SVF. Calcula la matriz de phi cuando se elimina el input "l"
+        Args:
+            l (int): Columna a eliminar dentro del dataset
+        Returns:
+            pandas.DataFrame: dataframe con las transformaciones de las DMUs sin  el input "l"
+        """
         matrix_phi_l = list()
         for dmu_pos in self.grid.data_grid.pos:
             phi = self.calculate_transformation_observation_without_l(dmu_pos, l)
@@ -164,8 +170,18 @@ class SVFDual(SVF):
         return matrix_phi_l
 
     def calculate_transformation_observation_without_l(self, dmu_pos, l):
+        """Función que calula el valor de phi sin el input "l"
+
+        Args:
+            dmu_pos (list): posición de la DMU en el grid
+            l (int): indice de la columna a eliminar
+
+        Returns:
+            list: Devuelve el valor de la transformación de la DMU cuando se elimina el input "l"
+        """
         phi = list()
         for celda in self.grid.df_grid.id_cell:
+            r = 0
             if celda[l] == 0:
                 for j in range(len(celda)):
                     if dmu_pos[j] >= celda[j]:

@@ -8,6 +8,7 @@ from svf_package.solution.svf_solution import SVFPrimalSolution
 
 FMT = "%d-%m-%Y %H:%M:%S"
 
+
 class SVFSplines(SVF):
     """Clase del modelo SVF Splines
     """
@@ -225,5 +226,3 @@ class SVFSplines(SVF):
             prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out][0])]), 3)
             prediction_list.append(prediction)
         return prediction_list
-
-

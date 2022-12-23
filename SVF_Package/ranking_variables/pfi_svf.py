@@ -8,24 +8,24 @@ from svf_package.svf_functions import create_SVF, calculate_mse
 
 class PFI(RankingMethod):
 
-    def __init__(self, svf_method, inputs, outputs, data, C, eps, D, verbose, n_folds=1, seed=0, stop_criteria=2):
+    def __init__(self, svf_method, inputs, outputs, data, C, eps, D, verbose, n_folds, seed, stop_criteria):
 
         super().__init__(svf_method, inputs, outputs, data, C, eps, D, verbose, n_folds,
                          seed, stop_criteria)
 
     def rank(self):
         n_inp = len(self.inputs)
-        self.cv = CrossValidation(self.svf_method, self.inputs, self.outputs, self.data, self.C, self.eps, self.D,
-                                  self.verbose, self.seed, self.n_folds)
-        self.cv.cv()
-        self.error_original = self.cv.results['mse'].min()
+        self.cv_obj = CrossValidation(self.svf_method, self.inputs, self.outputs, self.data, self.C, self.eps, self.D,
+                                  self.seed, self.verbose, self.n_folds)
+        self.cv_obj.cv()
+        data_train = self.cv_obj.folds[0].data_train
+        data_test = self.cv_obj.folds[0].data_test
+        self.error_original = self.cv_obj.results['mse'].min()
         self.error_inputs = list()
         self.ranking = DataFrame(columns=['var', 'score'])
         for inp in range(n_inp):
             if self.verbose == True:
                 print("Evaluating ranking of variable " + self.inputs[inp])
-            data_train = self.cv.folds[0].data_train.reset_index(drop=True).drop('index',axis=1)
-            data_test = self.cv.folds[0].data_test.reset_index(drop=True).drop('index',axis=1)
             data_train.iloc[:, inp] = permutation(data_train.iloc[:, inp].values)
             results_by_fold = DataFrame(columns=["C", "eps", "d"])
             for d in self.D:

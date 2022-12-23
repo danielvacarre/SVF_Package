@@ -41,13 +41,12 @@ class SVFGrid(GRID):
             for i in range(0, self.d + 1):
                 knot_i = knot_min + i * amplitud
                 knot.append(knot_i)
-
             knot_list.append(knot)
             knot_index.append(arange(0, len(knot)))
         self.df_grid["id_cell"] = list(product(*knot_index))
         self.df_grid["value"] = list(product(*knot_list))
         self.knot_list = knot_list
-        self.calculate_df_grid()
+        # self.calculate_df_grid()
         self.calculate_data_grid()
 
     def calculate_dmu_phi(self, cell):
@@ -75,6 +74,7 @@ class SVFGrid(GRID):
             phi_list.append(phi)
         return phi_list
 
+    # FUNCIÓN MUY COSTOSA COMPUTACIONALMENTE
     def calculate_df_grid(self):
         """Método para añadir al dataframe grid el valor de la transformada de cada observación
         """
@@ -111,6 +111,7 @@ class SVFGrid(GRID):
         self.data_grid["pos"] = pos_list
         self.data_grid["phi"] = phi_list
         self.data_grid["c_cells"] = c_cells
+
 
 def search_contiguous_cell(cell):
     con_c_list = list()

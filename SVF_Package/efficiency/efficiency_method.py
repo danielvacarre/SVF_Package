@@ -1,6 +1,9 @@
 # TODO: explicar las funciones
 class EfficiencyMethod:
     def __init__(self, inputs, outputs, data, methods, df_estimation=None):
+        """
+            Clase abstracta para crear métodos
+        """
         self.data = data
         self.df_estimation = df_estimation
         self.methods = methods
@@ -9,6 +12,9 @@ class EfficiencyMethod:
         self.df_eff = None
 
     def get_efficiencies(self):
+        """
+            Método que calcula las eficiencias de los métodos seleccionados.
+        """
         df_eff = self.data.filter(self.inputs).copy()
         df_eff2 = self.data.filter(self.outputs).copy()
         self.df_eff = df_eff.join(df_eff2)
@@ -25,6 +31,9 @@ class EfficiencyMethod:
             self.df_eff[met] = switch_method.get(met)
 
     def calculate_wa_w_inp(self):
+        """
+            Método que calcula los pesos de los inputs para el método weighted additive
+        """
         X = self.data.filter(self.inputs)
         X = X.to_numpy()
         n_inp = len(self.inputs)
@@ -38,6 +47,9 @@ class EfficiencyMethod:
         return w_inp
 
     def calculate_wa_w_out(self):
+        """
+            Método que calcula los pesos de los outputs para el método weighted additive
+        """
         Y = self.data.filter(self.outputs)
         Y = Y.to_numpy()
         w_out = list()

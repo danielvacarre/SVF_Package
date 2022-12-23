@@ -8,9 +8,7 @@ class FOLD:
 
         Args:
             data_train (pandas.DataFrame): Conjunto de datos de entrenamiento del fold
-
             data_test (pandas.DataFrame): Conjunto de datos de test del fold
-
             num (int): número del fold
             
         """

@@ -1,8 +1,6 @@
 from datetime import datetime
-
 from pandas import DataFrame, concat
 from sklearn.model_selection import KFold, train_test_split
-
 from svf_package.cv.fold import FOLD
 from svf_package.svf_functions import calculate_mse, create_SVF, create_dataset
 
@@ -13,8 +11,10 @@ class CrossValidation(object):
     """ Clase validación cruzada
     """
 
-    def __init__(self, method, inputs, outputs, data, C, eps, D, seed=0, n_folds=0, verbose=False, ts=0.33):
-        """Constructor del objeto validació cruzada. Realiza un train-test o una k-folds en base al número de folds seleccionado
+    def __init__(self, method, inputs, outputs, data, C, eps, D, seed=0, n_folds=0, verbose=False, ts=0.20):
+
+        """Constructor del objeto validació cruzada. Realiza un train-test o una k-folds en base al número de folds
+        seleccionado
 
         Args:
             method (string): Método SVF_Methods que se quiere utilizar
@@ -25,9 +25,11 @@ class CrossValidation(object):
             eps (list): Valores del hiperparámetro épsilon que queremos evaluar
             D (list): Valores del hiperparámetro d que queremos evaluar
             seed (int, optional): Semilla aleatoria para realizar la validación cruzada. Defaults to 0.
-            n_folds (int, optional):Número de folds del método de validación cruzada (<=1, indica que se aplica un train-test de 80%
+            n_folds (int, optional):Número de folds del método de validación cruzada (<=1, indica que se aplica un
+            train-test de 80%
             train-20%test,>2, indica que se aplican n_folds. Defaults to 0.
-            verbose (bool, optional): Indica si se quiere mostrar por pantalla los registros de la validación cruzada. Defaults to False.
+            verbose (bool, optional): Indica si se quiere mostrar por pantalla los registros de la validación cruzada.
+            Defaults to False.
             ts (float): indica el porcentaje de datos de test a utilizar en la cv
         """
 
@@ -59,7 +61,7 @@ class CrossValidation(object):
         self.data = create_dataset(self.inputs, self.outputs, self.data)
         if self.method == "dual":
             raise "Dual method can not implementate cross validation."
-        self.results_by_fold = DataFrame(columns=["C", "eps", "d", "mse"])
+        self.results_by_fold = DataFrame(columns=["C", "eps", "d"])
         if self.n_folds > 1:
             self.kfolds()
         else:
@@ -81,23 +83,35 @@ class CrossValidation(object):
             fold = FOLD(data_train, data_test, fold_num)
             # models = list()
             for d in self.D:
+                now = datetime.now()
+                fecha_inicio_comb = now.strftime(FMT)
                 svf_obj = create_SVF(self.method, self.inputs, self.outputs, fold.data_train, 1, 0, d)
                 svf_obj.train()
+                now = datetime.now()
+                fecha_fin_comb = now.strftime(FMT)
+                tiempo_comb = datetime.strptime(fecha_fin_comb, FMT) - datetime.strptime(fecha_inicio_comb, FMT)
+                print("     Tiempo_generar:", tiempo_comb)
                 for c in self.C:
                     for e in self.eps:
                         if self.verbose:
                             print("FOLD:", fold_num, "C:", c, "EPS:", e, "D:", d)
+                        now = datetime.now()
+                        fecha_inicio_comb = now.strftime(FMT)
                         svf_obj.model = svf_obj.modify_model(c, e)
                         svf_obj.solve()
                         mse = calculate_mse(svf_obj, fold.data_test)
-                        self.results_by_fold = concat([self.results_by_fold ,
-                                                       DataFrame.from_records([{ 'FOLD': fold_num,
-                                                                                 'C': c,
-                                                                                 "eps": e,
-                                                                                 "d": d,
-                                                                                 "mse": mse}])
+                        self.results_by_fold = concat([self.results_by_fold,
+                                                       DataFrame.from_records([{'FOLD': fold_num,
+                                                                                'C': c,
+                                                                                "eps": e,
+                                                                                "d": d,
+                                                                                "mse": mse}])
                                                        ])
                         # models.append(svf_obj.model)
+                        now = datetime.now()
+                        fecha_fin_comb = now.strftime(FMT)
+                        tiempo_comb = datetime.strptime(fecha_fin_comb, FMT) - datetime.strptime(fecha_inicio_comb, FMT)
+                        print("         Tiempo_modificar:", tiempo_comb)
             # fold.models = models
             list_fold.append(fold)
         now = datetime.now()
@@ -105,10 +119,10 @@ class CrossValidation(object):
         self.cv_time = datetime.strptime(fecha_fin_cv, FMT) - datetime.strptime(fecha_inicio_cv, FMT)
         self.folds = list_fold
         self.results = self.results_by_fold.groupby(['C', 'eps', 'd']).sum() / self.n_folds
-        self.results = self.results.sort_values(by=["mse","eps","d"])
+        self.results = self.results.sort_values(by=["mse", "eps", "d"])
         self.results = self.results.drop(['FOLD'], axis=1)
         min_error = self.results.loc[self.results['mse'] == self.results['mse'].min()]
-        min_error = DataFrame(list(min_error.index), columns=["C","eps","d"])
+        min_error = DataFrame(list(min_error.index), columns=["C", "eps", "d"])
         min_error = min_error.loc[min_error['C'] == min_error['C'].max()]
         min_error = min_error.loc[min_error['eps'] == min_error['eps'].min()]
         min_error = min_error.loc[min_error['d'] == min_error['d'].min()]
@@ -124,9 +138,11 @@ class CrossValidation(object):
         data_train, data_test = train_test_split(self.data, test_size=self.ts, random_state=self.seed)
         data_train = data_train.reset_index()
         data_test = data_test.reset_index()
+        data_train = data_train.drop("index", axis=1)
+        data_test = data_test.drop("index", axis=1)
         list_fold = list()
         fold = FOLD(data_train, data_test, "TRAIN-TEST")
-        # fold.models = list()
+        fold.models = list()
         list_fold.append(fold)
         for d in self.D:
             svf_obj = create_SVF(self.method, self.inputs, self.outputs, fold.data_train, 1, 0, d)
@@ -137,7 +153,7 @@ class CrossValidation(object):
                         print("     FOLD:", "TRAIN-TEST", "C:", c, "EPS:", e, "D:", d)
                     svf_obj.model = svf_obj.modify_model(c, e)
                     svf_obj.solve()
-                    # fold.models.append(svf_obj.model)
+                    fold.models.append(svf_obj.model)
                     mse = calculate_mse(svf_obj, fold.data_test)
                     self.results_by_fold = concat([self.results_by_fold,
                                                    DataFrame.from_records([{'FOLD': "TR-TE",

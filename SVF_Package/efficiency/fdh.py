@@ -1,12 +1,27 @@
 from docplex.mp.model import Model
 from svf_package.efficiency.efficiency_method import EfficiencyMethod
 
-# TODO: explicar las funciones
+
 class FDH(EfficiencyMethod):
     def __init__(self, inputs, outputs, data, methods, df_estimation=None):
+        """Constructor de la clase FDH. Hereda de EfficiencyMethod
+
+        Args:
+            inputs (list): Inputs a evaluar en el conjunto de dato.
+            outputs (list): Outputs a evaluar en el conjunto de datos.
+            data (pandas.DataFrame): Conjunto de datos a evaluar.
+            methods (list): lista de métodos de eficiencia a calcular.
+            df_estimation (pandas.DataFrame): dataframe que devuelve la estimación de eficiencia para los métodos
+            seleccionados.
+        """
         super().__init__(inputs, outputs, data, methods, df_estimation)
 
     def calculate_ri(self):
+        """Cálculo de la eficiencia BCC input
+
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -23,7 +38,7 @@ class FDH(EfficiencyMethod):
             n_obs = len(Y)
             # Variable landa
             name_landa = range(0, n_obs)
-            mdl = Model("DEA BCC INPUT ORIENTED")
+            mdl = Model("FDH BCC INPUT ORIENTED")
             # Variables
             # Variable theta
             theta = mdl.continuous_var(name="theta", ub=1e33, lb=0)
@@ -50,6 +65,10 @@ class FDH(EfficiencyMethod):
         return list_eff
 
     def calculate_ro(self):
+        """Cálculo de la eficiencia BCC ouput
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -66,7 +85,7 @@ class FDH(EfficiencyMethod):
             n_obs = len(Y)
             # Variable landa
             name_landa = range(0, n_obs)
-            mdl = Model("DEA BCC OUTPUT ORIENTED")
+            mdl = Model("FDH BCC OUTPUT ORIENTED")
             # Variables
             # Variable phi
             phi = mdl.continuous_var(name="phi", ub=1e33, lb=0)
@@ -93,6 +112,10 @@ class FDH(EfficiencyMethod):
         return list_eff
 
     def calculate_ddf(self):
+        """Cálculo de la eficiencia Directional Distance Function
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -109,7 +132,7 @@ class FDH(EfficiencyMethod):
             n_obs = len(Y)
             # Variable landa
             name_landa = range(0, n_obs)
-            mdl = Model("DEA DIRECTIONAL DISTANCE")
+            mdl = Model("FDH DIRECTIONAL DISTANCE")
             # Variables
             # Variable beta
             beta = mdl.continuous_var(name="beta", ub=1e33, lb=0)
@@ -138,6 +161,10 @@ class FDH(EfficiencyMethod):
         return list_eff
 
     def calculate_wa(self):
+        """Cálculo de la eficiencia Weighted Additive
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         w_inp = self.calculate_wa_w_inp()
         w_out = self.calculate_wa_w_out()
         list_eff = list()
@@ -154,7 +181,7 @@ class FDH(EfficiencyMethod):
             n_dim_y = len(self.outputs)
             # Número de observaciones del problema
             n_obs = len(Y)
-            mdl = Model("DEA WEIGHTED ADDITIVE")
+            mdl = Model("FDH WEIGHTED ADDITIVE")
             # Variables
             # Variable s
             name_s_neg = range(0, n_dim_x)
@@ -190,6 +217,10 @@ class FDH(EfficiencyMethod):
         return list_eff
 
     def calculate_rui(self):
+        """Cálculo de la eficiencia Russell Input
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -233,6 +264,10 @@ class FDH(EfficiencyMethod):
         return list_eff
 
     def calculate_ruo(self):
+        """Cálculo de la eficiencia Russell Output
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -247,7 +282,7 @@ class FDH(EfficiencyMethod):
             n_dim_y = len(Y.columns)
             # Número de observaciones del problema
             n_obs = len(Y)
-            mdl = Model("DEA OUTPUT ORIENTED RUSSELL")
+            mdl = Model("FDH OUTPUT ORIENTED RUSSELL")
             # Variables
             # Variable phi
             name_phi = range(0, n_dim_y)
@@ -277,6 +312,10 @@ class FDH(EfficiencyMethod):
         return list_eff
 
     def calculate_erg(self):
+        """Cálculo de la eficiencia Enhanced Russell Graph
+        Returns:
+            list_eff(list): Lista con las eficiencias medidas
+        """
         list_eff = list()
         for obs in range(len(self.data)):
             # Datos de las variables distintas de Y
@@ -292,7 +331,7 @@ class FDH(EfficiencyMethod):
             # Número de observaciones del problema
             n_obs = len(Y)
 
-            mdl = Model("DEA ENHANCED RUSSELL GRAPH")
+            mdl = Model("FDH ENHANCED RUSSELL GRAPH")
             # Variables
 
             # Variable beta
@@ -311,15 +350,15 @@ class FDH(EfficiencyMethod):
             landa_var = mdl.binary_var_dict(name_landa, name="landa")
 
             # Función objetivo
-            summa = mdl.sum(t_neg_var[j]/x[obs][j] for j in range(n_dim_x))
-            mdl.minimize(beta_var - (1/n_dim_x) * summa)
+            summa = mdl.sum(t_neg_var[j] / x[obs][j] for j in range(n_dim_x))
+            mdl.minimize(beta_var - (1 / n_dim_x) * summa)
 
             # Restricciones
 
             # R1
-            summa1 = mdl.sum(t_pos_var[r]/y[obs][r] for r in range(n_dim_y))
+            summa1 = mdl.sum(t_pos_var[r] / y[obs][r] for r in range(n_dim_y))
             mdl.add_constraint(
-                beta_var + (1/n_dim_y) * summa1 == 1
+                beta_var + (1 / n_dim_y) * summa1 == 1
             )
 
             # R2
@@ -351,4 +390,3 @@ class FDH(EfficiencyMethod):
             # print(mdl.export_to_string())
             list_eff.append(eff)
         return list_eff
-

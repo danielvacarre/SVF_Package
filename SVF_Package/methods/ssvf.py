@@ -72,7 +72,7 @@ class SSVF(SVF):
         xi_var = mdl.continuous_var_dict(name_xi, ub=1e+33, lb=0, name='xi')
 
         # Funcion objetivo
-        mdl.minimize(mdl.sum(w_var[i] * w[i] for i in name_w) + mdl.sum(xi_var[i] * xi[i] for i in name_xi))
+        mdl.minimize(mdl.sum(w_var[i] * w_var[i] * w[i] for i in name_w) + mdl.sum(xi_var[i] * xi[i] for i in name_xi))
 
         # Restricciones
         for obs in range(n_obs):
