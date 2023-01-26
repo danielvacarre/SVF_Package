@@ -92,11 +92,6 @@ class SVFSplines(SVF):
                 )
 
         for out in range(n_out):
-            #     left_side = w_var[0, 0, 0]
-            #     mdl.add_constraint(
-            #         left_side >= 0,
-            #         ctname='c3_x' + str(1) + '_y' + str(out + 1)
-            #     )
             for inp in range(n_inp):
                 for knot in range(2, len(self.grid.knot_list[inp]) + 2):
                     left_side = mdl.sum(w_var[knot, inp, out] * 1 for knot in range(1, knot))
