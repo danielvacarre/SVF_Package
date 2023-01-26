@@ -8,7 +8,6 @@ from svf_package.svf_functions import calculate_mse, create_SVF, create_dataset
 
 FMT = "%d-%m-%Y %H:%M:%S"
 
-
 class CrossValidation(object):
     """ Clase validación cruzada
     """
@@ -79,7 +78,6 @@ class CrossValidation(object):
             data_train = data_train.reset_index()
             data_test = data_test.reset_index()
             fold = FOLD(data_train, data_test, fold_num)
-            # models = list()
             for d in self.D:
                 svf_obj = create_SVF(self.method, self.inputs, self.outputs, fold.data_train, 1, 0, d)
                 svf_obj.train()
@@ -97,8 +95,6 @@ class CrossValidation(object):
                                                                                  "d": d,
                                                                                  "mse": mse}])
                                                        ])
-                        # models.append(svf_obj.model)
-            # fold.models = models
             list_fold.append(fold)
         now = datetime.now()
         fecha_fin_cv = now.strftime(FMT)
@@ -126,7 +122,6 @@ class CrossValidation(object):
         data_test = data_test.reset_index()
         list_fold = list()
         fold = FOLD(data_train, data_test, "TRAIN-TEST")
-        # fold.models = list()
         list_fold.append(fold)
         for d in self.D:
             svf_obj = create_SVF(self.method, self.inputs, self.outputs, fold.data_train, 1, 0, d)
@@ -137,7 +132,6 @@ class CrossValidation(object):
                         print("     FOLD:", "TRAIN-TEST", "C:", c, "EPS:", e, "D:", d)
                     svf_obj.model = svf_obj.modify_model(c, e)
                     svf_obj.solve()
-                    # fold.models.append(svf_obj.model)
                     mse = calculate_mse(svf_obj, fold.data_test)
                     self.results_by_fold = concat([self.results_by_fold,
                                                    DataFrame.from_records([{'FOLD': "TR-TE",

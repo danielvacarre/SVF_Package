@@ -189,13 +189,18 @@ class SVFSplines(SVF):
                 sol_xi.append(sol)
             else:
                 sol_w.append(sol)
-        mat_w = [[] for _ in range(n_out)]
+        mat_w = []
         cont = 0
         for i in range(n_out):
-            for j in range(len(self.grid.data_grid["phi"][i][0][0])):
-                w = round(sol_w[cont], 6)
-                mat_w[i].append(w)
-                cont += 1
+            mat_2 = []
+            for j in range(len(self.inputs)):
+                mat_3 = []
+                for k in range(len(self.grid.data_grid["phi"][i][0][0])):
+                    w = round(sol_w[cont], 6)
+                    mat_3.append(w)
+                    cont += 1
+                mat_2.append((mat_3))
+            mat_w.append(mat_2)
 
         mat_xi = [[] for _ in range(n_out)]
         cont = 0
@@ -221,9 +226,9 @@ class SVFSplines(SVF):
         phi = self.grid.calculate_dmu_phi(dmu)
         prediction_list = list()
         for out in range(len(self.outputs)):
-            # print(self.solution.w[out], phi[out])
-            prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out][0])]), 3)
+            prediction = 0
+            for inp in range(len(self.inputs)):
+                prediction += round(sum([a * b for a, b in zip(self.solution.w[out][inp], phi[out][inp])]), 3)
             prediction_list.append(prediction)
         return prediction_list
-
 
