@@ -1,8 +1,8 @@
 from numpy import dot, array
 from pandas import DataFrame, concat
-from svf_package.cv.cv import CrossValidation
-from svf_package.ranking_variables.ranking_method import RankingMethod
-from svf_package.svf_functions import create_SVF
+from SVF_Package.cv.cv import CrossValidation
+from SVF_Package.ranking_variables.ranking_method import RankingMethod
+from SVF_Package.svf_functions import create_SVF
 
 
 class RFESVF(RankingMethod):

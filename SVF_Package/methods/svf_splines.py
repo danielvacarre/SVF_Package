@@ -2,9 +2,9 @@ from datetime import datetime
 
 from docplex.mp.model import Model
 
-from svf_package.grid.svf_splines_grid import SVFSplinesGrid
-from svf_package.methods.svf import SVF
-from svf_package.solution.svf_solution import SVFPrimalSolution
+from SVF_Package.grid.svf_splines_grid import SVFSplinesGrid
+from SVF_Package.methods.svf import SVF
+from SVF_Package.solution.svf_solution import SVFPrimalSolution
 
 FMT = "%d-%m-%Y %H:%M:%S"
 

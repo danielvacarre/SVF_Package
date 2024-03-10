@@ -1,15 +1,15 @@
 from pandas import concat
-from svf_package.methods.ssvf import SSVF
-from svf_package.methods.svf_dual import SVFDual
-from svf_package.methods.svf_splines import SVFSplines
-from svf_package.methods.svfc import SVFC
+from SVF_Package.methods.ssvf import SSVF
+from SVF_Package.methods.svf_dual import SVFDual
+from SVF_Package.methods.svf_splines import SVFSplines
+from SVF_Package.methods.svfc import SVFC
 
 def calculate_mse(svf, data_test):
     """Función que calcula el Mean Square Error (MSE) del cross-validation
 
         Args:
             data_test (pandas.DataFrame): conjunto de datos de test sobre los que se va a evaluar el MSE
-            svf (svf_package.svf.SVF): modelo SVF sobre el que se va a evaluar los datos de test. Contiene los pesos (w) y el grid para calcular la estimación
+            svf (SVF_Package.svf.SVF): modelo SVF sobre el que se va a evaluar los datos de test. Contiene los pesos (w) y el grid para calcular la estimación
 
         Returns:
             float: Mean Square Error obtenido para ese modelo y conjunto de datos

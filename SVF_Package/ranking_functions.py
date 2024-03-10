@@ -1,6 +1,6 @@
-from svf_package.ranking_variables.svf_pfi import PFI
-from svf_package.ranking_variables.svf_pseudosamples import SVFPseudosamples
-from svf_package.ranking_variables.svf_rfe import RFESVF
+from SVF_Package.ranking_variables.svf_pfi import PFI
+from SVF_Package.ranking_variables.svf_pseudosamples import SVFPseudosamples
+from SVF_Package.ranking_variables.svf_rfe import RFESVF
 
 
 

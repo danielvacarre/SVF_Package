@@ -1,9 +1,9 @@
 from datetime import datetime
 from docplex.mp.model import Model
 from numpy import asarray, float32
-from svf_package.grid.svfgrid import SVFGrid
-from svf_package.methods.svf import SVF
-from svf_package.solution.svf_solution import SVFPrimalSolution
+from SVF_Package.grid.svfgrid import SVFGrid
+from SVF_Package.methods.svf import SVF
+from SVF_Package.solution.svf_solution import SVFPrimalSolution
 FMT = "%d-%m-%Y %H:%M:%S"
 
 class SVFC(SVF):
@@ -89,19 +89,19 @@ class SVFC(SVF):
         # (3)
         for out in range(n_out):
             lhs = mdl.sum(
-                u_var[out, var] * self.grid.df_grid.phi[0][out][var] - v_var[out, var] * self.grid.df_grid.phi[0][out][
+                u_var[out, var] * self.grid.grid_properties.phi[0][out][var] - v_var[out, var] * self.grid.grid_properties.phi[0][out][
                     var] for var in
                 range(n_var)
             )
             mdl.add_constraint(
                 lhs >= 0,
-                ctname='c3_' + str(self.grid.df_grid.id_cell[0]) + "_" + str(out)
+                ctname='c3_' + str(self.grid.grid_properties.id_cell[0]) + "_" + str(out)
             )
-        for index, cell in self.grid.df_grid.iterrows():
+        for index, cell in self.grid.grid_properties.iterrows():
             left_side = cell["phi"][0]
             c_cont = cell["c_cells"]
             for c_cell in c_cont:
-                c_cont_row = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == c_cell]
+                c_cont_row = self.grid.grid_properties.loc[self.grid.grid_properties['id_cell'] == c_cell]
                 right_side = c_cont_row["phi"].values[0][0]
                 constraint = asarray(left_side, dtype=float32) - asarray(right_side, dtype=float32)
                 for out in range(n_out):

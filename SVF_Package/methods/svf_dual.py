@@ -3,9 +3,9 @@ from datetime import datetime
 from docplex.mp.model import Model
 from numpy import dot, array, around
 
-from svf_package.grid.svfgrid import SVFGrid
-from svf_package.methods.svf import SVF
-from svf_package.solution.svf_dual_solution import SVFDualSolution
+from SVF_Package.grid.svfgrid import SVFGrid
+from SVF_Package.methods.svf import SVF
+from SVF_Package.solution.svf_dual_solution import SVFDualSolution
 
 FMT = "%d-%m-%Y %H:%M:%S"
 
@@ -165,7 +165,7 @@ class SVFDual(SVF):
 
     def calculate_transformation_observation_without_l(self, dmu_pos, l):
         phi = list()
-        for celda in self.grid.df_grid.id_cell:
+        for celda in self.grid.grid_properties.id_cell:
             if celda[l] == 0:
                 for j in range(len(celda)):
                     if dmu_pos[j] >= celda[j]:

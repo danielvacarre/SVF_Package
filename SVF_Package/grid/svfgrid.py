@@ -1,7 +1,7 @@
 from itertools import product
 from numpy import arange
 from pandas import DataFrame
-from svf_package.grid.grid import GRID
+from SVF_Package.grid.grid import GRID
 
 
 class SVFGrid(GRID):
@@ -18,13 +18,13 @@ class SVFGrid(GRID):
             d (list): número de particiones en las que se divide el grid
         """
         super().__init__(data, inputs, outputs, d)
-        self.df_grid = None
+        self.grid_properties = None
 
     def create_grid(self):
         """
             Función que crea un grid en base a unos datos e hiperparámetro d
         """
-        self.df_grid = DataFrame(columns=["id_cell", "value", "phi"])
+        self.grid_properties = DataFrame(columns=["id_cell", "value", "phi"])
         x = self.data.filter(self.inputs)
         # Numero de columnas x
         n_dim = len(x.columns)
@@ -41,14 +41,17 @@ class SVFGrid(GRID):
             for i in range(0, self.d + 1):
                 knot_i = knot_min + i * amplitud
                 knot.append(knot_i)
-
             knot_list.append(knot)
             knot_index.append(arange(0, len(knot)))
-        self.df_grid["id_cell"] = list(product(*knot_index))
-        self.df_grid["value"] = list(product(*knot_list))
+        self.grid_properties["id_cell"] = list(product(*knot_index))
+        self.grid_properties["value"] = list(product(*knot_list))
         self.knot_list = knot_list
-        self.calculate_df_grid()
-        self.calculate_data_grid()
+        self.calculate_grid_properties()
+        self.calculate_virtual_grid()
+
+    def calculate_virtual_grid(self):
+        virtual_x = self.grid_properties["value"]
+        self.virtual_grid = DataFrame(virtual_x.tolist(), columns=self.inputs)
 
     def calculate_dmu_phi(self, cell):
         """
@@ -63,9 +66,9 @@ class SVFGrid(GRID):
         phi_list = []
         n_dim = len(cell)
         value = 0
-        for i in range(0, len(self.df_grid)):
+        for i in range(0, len(self.grid_properties)):
             for j in range(0, n_dim):
-                if cell[j] >= self.df_grid["id_cell"][i][j]:
+                if cell[j] >= self.grid_properties["id_cell"][i][j]:
                     value = 1
                 else:
                     value = 0
@@ -75,10 +78,10 @@ class SVFGrid(GRID):
             phi_list.append(phi)
         return phi_list
 
-    def calculate_df_grid(self):
+    def calculate_grid_properties(self):
         """Método para añadir al dataframe grid el valor de la transformada de cada observación
         """
-        x = self.df_grid["value"]
+        x = self.grid_properties["value"]
         x_list = x.values.tolist()
         phi_list = list()
         c_cells = list()
@@ -86,11 +89,11 @@ class SVFGrid(GRID):
             p = self.search_dmu(x)
             phi = self.calculate_dmu_phi(p)
             phi_list.append(phi)
-        for index, cell in self.df_grid.iterrows():
+        for index, cell in self.grid_properties.iterrows():
             c_cell = search_contiguous_cell(cell['id_cell'])
             c_cells.append(c_cell)
-        self.df_grid["phi"] = phi_list
-        self.df_grid["c_cells"] = c_cells
+        self.grid_properties["phi"] = phi_list
+        self.grid_properties["c_cells"] = c_cells
 
     def calculate_data_grid(self):
         """Método para añadir al dataframe grid el valor de la transformada de cada observación

@@ -2,9 +2,9 @@ from datetime import datetime
 
 from docplex.mp.model import Model
 
-from svf_package.grid.svfgrid import SVFGrid
-from svf_package.methods.svf import SVF
-from svf_package.solution.svf_solution import SVFPrimalSolution
+from SVF_Package.grid.svfgrid import SVFGrid
+from SVF_Package.methods.svf import SVF
+from SVF_Package.solution.svf_solution import SVFPrimalSolution
 
 FMT = "%d-%m-%Y %H:%M:%S"
 
@@ -48,7 +48,7 @@ class SSVF(SVF):
         self.grid.create_grid()
 
         # Numero de variables w
-        n_var = len(self.grid.data_grid.phi[0][0])
+        n_var = len(self.grid.grid_properties.phi[0][0])
 
         #######################################################################
 
@@ -77,7 +77,7 @@ class SSVF(SVF):
         # Restricciones
         for obs in range(n_obs):
             for out in range(n_out):
-                left_side = y[obs][out] - mdl.sum(w_var[out, var] * self.grid.data_grid.phi[obs][out][var]
+                left_side = y[obs][out] - mdl.sum(w_var[out, var] * self.grid.grid_properties.phi[obs][out][var]
                                                   for var in range(n_var))
                 # (1)
                 mdl.add_constraint(

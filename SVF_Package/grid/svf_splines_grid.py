@@ -1,5 +1,5 @@
 from numpy import arange
-from svf_package.grid.grid import GRID
+from SVF_Package.grid.grid import GRID
 
 
 class SVFSplinesGrid(GRID):

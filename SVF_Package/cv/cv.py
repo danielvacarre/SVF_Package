@@ -3,8 +3,8 @@ from datetime import datetime
 from pandas import DataFrame, concat
 from sklearn.model_selection import KFold, train_test_split
 
-from svf_package.cv.fold import FOLD
-from svf_package.svf_functions import calculate_mse, create_SVF, create_dataset
+from SVF_Package.cv.fold import FOLD
+from SVF_Package.svf_functions import calculate_mse, create_SVF, create_dataset
 
 FMT = "%d-%m-%Y %H:%M:%S"
 

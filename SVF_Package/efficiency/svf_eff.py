@@ -1,6 +1,6 @@
 from docplex.mp.model import Model
 
-from svf_package.efficiency.efficiency_method import EfficiencyMethod
+from SVF_Package.efficiency.efficiency_method import EfficiencyMethod
 
 
 # TODO: explicar las funciones

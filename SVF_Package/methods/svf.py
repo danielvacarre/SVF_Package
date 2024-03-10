@@ -1,9 +1,9 @@
 from pandas import DataFrame, concat
 
-from svf_package.efficiency.csvf_eff import CSVFEff
-from svf_package.efficiency.dea import DEA
-from svf_package.efficiency.fdh import FDH
-from svf_package.efficiency.svf_eff import SVFEff
+from SVF_Package.efficiency.csvf_eff import CSVFEff
+from SVF_Package.efficiency.dea import DEA
+from SVF_Package.efficiency.fdh import FDH
+from SVF_Package.efficiency.svf_eff import SVFEff
 
 
 class SVF:
@@ -92,12 +92,12 @@ class SVF:
             raise RuntimeError("El número de inputs de la DMU no coincide con el número de inputs del problema.")
         dmu_cell = self.grid.search_dmu(dmu)
         if (dmu_cell.count(-1) >= 1):
-            phi = self.grid.df_grid.loc[0, "phi"]
+            phi = self.grid.grid_properties.loc[0, "phi"]
             for i in range(len(phi)):
                 for j in range(len(phi[i])):
                     phi[i][j] = 0
         else:
-            phi = self.grid.df_grid.loc[self.grid.df_grid['id_cell'] == dmu_cell, "phi"].values[0]
+            phi = self.grid.grid_properties.loc[self.grid.grid_properties['id_cell'] == dmu_cell, "phi"].values[0]
         prediction_list = list()
         for out in range(len(self.outputs)):
             prediction = round(sum([a * b for a, b in zip(self.solution.w[out], phi[out])]), 3)
@@ -117,6 +117,20 @@ class SVF:
         df_y_est = DataFrame(df_y_est,columns=name_columns)
         df_y_est = concat((df_estimation, df_y_est), axis=1)
         self.df_estimation = df_y_est
+
+    def get_virtual_grid_estimation(self):
+        if self.solution is None:
+            self.solve()
+        df_estimation = self.grid.virtual_grid.filter(self.inputs).copy()
+        df_y_est = list()
+        for dmu_index in range(len(df_estimation)):
+            dmu = df_estimation.iloc[dmu_index].to_list()
+            y_est = self.get_estimation(dmu)
+            df_y_est.append(y_est)
+        name_columns = self.outputs
+        df_y_est = DataFrame(df_y_est,columns=name_columns)
+        df_y_est = concat((df_estimation, df_y_est), axis=1)
+        self.grid.virtual_grid = df_y_est
 
     def get_svf_efficiencies(self,methods):
         if self.df_eff is None:
